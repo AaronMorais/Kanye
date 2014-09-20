@@ -67,12 +67,13 @@ app.get('/sms', function(req, res) {
                 if (isImage(url)) {
                     res.send(JSON.stringify({
                         media: url,
+                        message: child.title,
                         number: number
                     }));
                     res.status(200).end();
                 } else {
                     request(url).pipe(article(url, function(err, result) {
-                        if (err) {
+                        if (err || result.text.length <= child.title) {
                             res.send(JSON.stringify({
                                 message: "Sorry, couldn't display that post.",
                                 number: number
