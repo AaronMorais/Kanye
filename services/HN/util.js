@@ -2,14 +2,16 @@ var keywords = ["hn", "more"];
 
 var isValidCommand = function(command) {
   // Handle a string
-  if (typeof command === "string" || !isNaN(command)) {
-    if (keywords.indexOf(command) > -1) {
+  if (typeof command === "string" && isNaN(command)) {
+    if (keywords.indexOf(command.toLowerCase()) > -1) {
       return true;
     } else {
       return false;
     }
+  } else if (!isNaN(command)) {
+    return true;
   }
-  return true;
+  return false;
 };
 
 var createListResponse = function(data) {

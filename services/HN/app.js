@@ -30,7 +30,6 @@ var handleMessage = function(req, res) {
   var number = req.query.number;
   var message = req.query.message;
 
-  // Invalid data set from main server
   if (!util.isValidCommand(message)) {
     console.log("Invalid command");
     res.status(400).end();
@@ -73,6 +72,7 @@ var handleMessage = function(req, res) {
 
   } else if (!isNaN(message)) {
     // the message is a number, must zero index
+    var state = activeUsers[number];
     var index = parseInt(message)-1;
     var url = state.getArticleLink(index);
     if (!url) {
