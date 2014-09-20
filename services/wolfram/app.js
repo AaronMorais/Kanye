@@ -18,6 +18,7 @@ var formatResult = function(result) {
     if (pod &&
         pod.$.title != "Input" &&
         pod.$.title != "Input interpretation" &&
+        pod.$.title != "Input information" &&
         pod.$.title != "Plot" &&
         pod.subpod.length &&
         pod.subpod[0] &&
