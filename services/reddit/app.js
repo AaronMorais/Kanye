@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var kanye = require("../../app");
+var kanye = require("../../kanye");
 var request = require("request");
 
 // The main app can hit this when an SMS is received

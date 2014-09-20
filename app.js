@@ -87,12 +87,3 @@ app.get('/sendsms', function(req, res) {
 });
 
 app.listen(80);
-
-module.exports = {
-    sendMessage: function(number, message) {
-        request("http://localhost:80/sendsms?message=" +
-            message +
-            "&number=" +
-            encodeURIComponent(number));
-    }
-};
