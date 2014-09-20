@@ -11,6 +11,7 @@ app.get('/sms', function(req, res) {
     }
 
     request("http://reddit.com/top.json", function(error, response, body) {
+        console.log(body);
         var json = JSON.parse(body);
 
         var response = "";
@@ -20,6 +21,7 @@ app.get('/sms', function(req, res) {
             response += title + "\n";
         }
 
+        console.log(response);
         kanye.sendMessage(req.query.number, response);
         res.status(200).end();
     });
