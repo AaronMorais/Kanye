@@ -17,7 +17,7 @@ var handleClear = function(req, res) {
     res.send(400);
   }
   delete activeUsers[user];
-  res.send(200);
+  res.status(200).end();
 };
 
 var messageEndpoint = function(req, res) {
@@ -30,7 +30,7 @@ var messageEndpoint = function(req, res) {
   }
   var response = handleMessage(message, number, function(reply) {
     res.write(reply);
-    res.send(200);
+    res.status(200).end();
     return;
   });
 };
@@ -64,7 +64,7 @@ var handleMessage = function(message, number, callback) {
     }
   });
 };
-/*
+/* For testing purposes
 handleMessage("lol", "123456", function(reply) {
   for (var i=0; i<reply.length; i++) {
     console.log(reply[i]);
