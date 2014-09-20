@@ -23,20 +23,16 @@ var handleClear = function(req, res) {
 };
 
 var handleMessage = function(req, res) {
-  console.log("Getting a request");
   var number = req.query.number;
   var message = req.query.message;
 
   // Invalid data set from main server
   if (!message || !number) {
-    console.log("Message or number doesn't exist");
     res.status(400).end();
     return;
   }
-  console.log("No error so far -- 1")
 
   var response = handleScrape(message, number, function(reply) {
-    console.log("Got the content", reply);
     request(baseUrl + "sendsms?message=" + reply +
 			"&number=" + encodeURIComponent(number)
     );
@@ -80,8 +76,5 @@ handleMessage("lol", "123456", function(reply) {
 
 app.get(messageEndpoint, handleMessage);
 app.get(clearEndpoint, handleClear);
-app.get("/", function(req, res) {
-  console.log("HELOHLEHOELH");
-});
 
 app.listen(3001);
