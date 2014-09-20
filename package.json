@@ -10,7 +10,8 @@
     "jsdom": "1.0.0-pre.7",
     "express": "",
     "request": "",
-    "twilio": ""
+    "twilio": "",
+    "node-wolfram": ""
   },
   "repository": {
     "type": "git",
