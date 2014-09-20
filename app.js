@@ -35,7 +35,9 @@ app.get('/sms', function(req, res) {
 
         // Update the state and tell the old state we are clearing it
         g_states[number] = service;
-        request(state + "/clear?number=" + number);
+        if (state) {
+            request(state + "/clear?number=" + number);
+        }
     } else if (state) {
         service = state;
     } else {
