@@ -1,10 +1,12 @@
 // Print all of the news items on Hacker News
 var jsdom = require("jsdom");
 var State = require("./state");
+var request = require('request');
 var app = require("express")();
 
 var messageEndpoint = "/message/";
 var clearEndpoint = "/clear/";
+var baseUrl = "http://localhost:80/";
 
 var serviceUrl = "http://news.ycombinator.com/";
 var serviceScripts = ["http://code.jquery.com/jquery.js"];
@@ -29,9 +31,10 @@ var messageEndpoint = function(req, res) {
     res.send(400);
   }
   var response = handleMessage(message, number, function(reply) {
-    res.write(reply);
+    request(baseUrl + "sendsms?message=" + reply +
+			"&number=" + encodeURIComponent(number)
+    );
     res.status(200).end();
-    return;
   });
 };
 
@@ -40,15 +43,13 @@ var handleMessage = function(message, number, callback) {
     activeUsers[number] = new State();
   }
 
-  var articles;
   var state = activeUsers[number];
-
   jsdom.env({
     url: serviceUrl,
     scripts: serviceScripts,
     done: function (errors, window) {
       var $ = window.$;
-      articles = $("td.title:not(:last) a");
+      var articles = $("td.title:not(:last) a");
       // Grab 5 pages and increment counter
       var elements = articles.slice(
         state.getPage(),
@@ -60,7 +61,7 @@ var handleMessage = function(message, number, callback) {
       var reply = $.map(elements, function(elem) {
         return $(elem).text();
       });
-      callback(reply);
+      callback(reply.join("\n"));
     }
   });
 };
