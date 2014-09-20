@@ -11,6 +11,7 @@ var app = express();
 var SERVICES = {
     advice: "http://127.0.0.1:3000",
     hn: "http://127.0.0.1:3001",
+    wolfram: "http://127.0.01:4000",
     test: "http://127.0.0.1",
     getServiceFromMessage: function(message) {
         return this[message.toLowerCase().split(/\s+/)[0]];
@@ -46,10 +47,6 @@ app.get('/sms', function(req, res) {
     } else {
         service = SERVICES.wolfram;
         console.log("WOLFRAM SERVICE BY DEFAULT");
-
-        // TODO remove when wolfram service is implemented
-        res.status(404).end();
-        return;
     }
 
     // Now we know which service we should notify
@@ -67,9 +64,8 @@ app.get('/sms', function(req, res) {
                 }
                 console.log("WOLFRAM SERVICE FROM ERR");
 
-                // TODO remove when wolfram service is implemented
-                res.status(404).end();
-                return;
+                request(service + "/sms?message=" + message + "&number=" +
+                    encodeURIComponent(number));
             }
     });
 
@@ -91,3 +87,13 @@ app.get('/sendsms', function(req, res) {
 });
 
 app.listen(80);
+
+
+module.exports = {
+    sendMessage: function(number, message) {
+        request("http://localhost:80/sendsms?message=" +
+            message +
+            "&number=" +
+            encodeURIComponent(number));
+    }
+}
