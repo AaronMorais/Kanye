@@ -9,10 +9,7 @@ var isValidCommand = function(command) {
       return false;
     }
   }
-  if (typeof command === "number") {
-    return true;
-  }
-  return false;
+  return true;
 };
 
 var createListResponse = function(data) {
