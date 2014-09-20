@@ -71,14 +71,17 @@ function getAdvice() {
 
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
+
+  // TODO . this should never happen, add invariant.
   if (req.query.message.toLowerCase() != "advice") {
     res.status(400).end();
-        return;
+    return;
   }
 
-    var message = getAdvice();
-  kanye.sendMessage(req.query.number, message);
-  res.status(200).end();
+  var message = getAdvice();
+
+  // Return this JSON object. Kanye will handle sending the text message.
+  res.status(200).json({ number: req.query.number, message: message });
 });
 
 app.listen(3000);

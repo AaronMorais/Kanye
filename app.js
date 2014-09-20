@@ -1,12 +1,14 @@
 var express = require('express');
 var request = require('request');
-var config = require('./config');
+var config  = require('./config');
+var kanye   = require('./kanye');
 
 var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
 // Start the express app
 var app = express();
 
+var KANYE_PORT = config.DEBUG ? 8000 : 80;
 // Services object
 var SERVICES = {
   advice: 'http://127.0.0.1:3000',
@@ -30,26 +32,30 @@ app.get('/', function(req, res) {
 /*
   Utility endpoint. Allows us to test without sending a text message.
   To use:
-    Start the server and go to the /test?m={message}
-    The page should respond with what it would normally text you
+    1. Start the server and go to the /test?m={message}
+    2. The page should respond with what it would normally text you
 */
 app.get('/test', function(req, res) {
-  var testPayload = {
+  var testParams = {
     From: '+5555555555',
-    Body: req.query.m
+    Body: req.query.m,
+    Test: true,
   };
 
-  console.log(testPayload);
+  request({ url: 'http://localhost:' + KANYE_PORT + '/sms', qs: testParams },
+    function(error, response, body) {
+      if (error) {
+        res.status(500).send('Test failed to send. ' + error);
+        return;
+      }
 
-  request({ url: '/sms', qs: testPayload }, function(error, response, body) {
-    console.log(error);
-    console.log(body);
-    console.log(response);
-  });
+      res.status(200).send(body);
+    });
 });
 
 // Twilio will ping this when we receieve an SMS
 app.get('/sms', function(req, res) {
+  var isLocalTest = req.query.Test;
   var number = req.query.From;
   var message = req.query.Body;
   var state = g_states[number];
@@ -72,31 +78,33 @@ app.get('/sms', function(req, res) {
       service = state;
     } else {
       service = SERVICES.wolfram;
-      console.log("WOLFRAM SERVICE BY DEFAULT");
+      console.log('Falling back to Wolfram Alpha service.');
     }
 
-    // Now we know which service we should notify
-    // lets build a request and notify it
+    // Route the request to the proper service.
+    // The service should return a JSON object `{ message: ... }` which will contain text
+    // to be sent to the user.
     request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
       function(error, response, body) {
         if (error || response.statusCode != 200) {
-          // This service didn't handle us properly
-          // Let's just fallback to wolfram
-          // TODO do when wolfram service is implemented
-          service = SERVICES.wolfram;
-          g_states[number] = service;
-          if (state) {
-            request(state + "/clear?number=" + number);
-          }
-          console.log("WOLFRAM SERVICE FROM ERR");
+          // Don't fallback to wolfram alpha, it could've been the one that failed!
+          // Send a 'try again later' instead.'
+          kanye.sendMessage(number, 'Sorry, I\'m really busy right now. Hit me up later.');
+          console.error('Service %s failed.', service);
+          return;
+        }
 
-          request(service + "/sms?message=" + message + "&number=" +
-          encodeURIComponent(number), function(){});
+        var outgoingMessage = JSON.parse( body ).message;
+
+        // Instead of sending a test message, inline the result directly to webpage.
+        if (isLocalTest) {
+          res.status(200).send(outgoingMessage);
+        } else {
+          // Send the outgoing message back to the user
+          kanye.sendMessage(number, outgoingMessage);
+          res.status(200).end();
         }
       });
-
-    // OK everything went well, send 200 and end request
-    res.status(200).end();
   });
 
 app.get('/sendsms', function(req, res) {
@@ -122,5 +130,5 @@ app.get('/sendsms', function(req, res) {
   res.status(200).end();
 });
 
-console.log('Kanye is ready and here to help.');
-app.listen(config.DEBUG ? 8000 : 80);
+app.listen(KANYE_PORT);
+console.log('Kanye is at port ' + KANYE_PORT + ' and is ready to help.');

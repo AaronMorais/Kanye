@@ -32,12 +32,7 @@ app.get('/sms', function(req, res) {
 			return;
 		}
 
-		var message = formatResult(result);
-		request("http://localhost:80/sendsms?message=" +
-				message +
-				"&number=" +
-				encodeURIComponent(req.query.number));
-		res.status(200).end();
+    res.status(200).json({ message: formatResult(result) });
 	});
 });
 
