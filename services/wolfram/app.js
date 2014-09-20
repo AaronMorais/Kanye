@@ -12,7 +12,7 @@ var shouldFilterOutTitle = function(title) {
 }
 
 var formatResult = function(result) {
-	if (!result.queryresult.pod) return "";
+	if (!result.queryresult.pod) return '';
   for (var a = 0; a < result.queryresult.pod.length; a++) {
     var pod = result.queryresult.pod[a];
     if (pod &&
@@ -21,33 +21,43 @@ var formatResult = function(result) {
         pod.$.title != "Plot" &&
         pod.subpod.length &&
         pod.subpod[0] &&
-        pod.subpod[0].plaintext &&
         pod.subpod[0].plaintext.length) {
       var title   = pod.$.title;
-      var answer  = pod.subpod.plaintext[0];
+      var answer  = pod.subpod[0].plaintext[0];
 
       // Some title don't make sense to add. Filter them out there.
       return shouldFilterOutTitle(title) ? answer : title + ':\n' + answer;
     }
   }
-  return "";
+  return '';
 };
+
+var getWolframResult = function(userQuery, callback) {
+  wolfram.query(userQuery, function(err, result) {
+    if (err) {
+      return '';
+    }
+
+    if (result.queryresult &&
+        !result.queryresult.didyoumeans) {
+      var outgoingMessage = formatResult(result);
+      callback(outgoingMessage);
+    } else {
+      var newQuery = result.queryresult.didyoumeans[0].didyoumean[0]._;
+      getWolframResult(newQuery, callback);
+    }
+  });
+}
 
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
-	var userQuery = req.query.message;
-	wolfram.query(userQuery, function(err, result) {
-    var outgoingMessage = formatResult(result);
+  var userQuery = req.query.message;
 
-		if (err) {
-			res.status(400).end();
-			return;
-		}
-
-    if (outgoingMessage === '') {
+  getWolframResult(userQuery, function(result) {
+    if (result === '') {
       res.status(200).json({ message: 'Sorry, I don\'t have an answer for that.' });
     } else {
-      res.status(200).json({ message: formatResult(result) });
+      res.status(200).json({ message: result });
     }
   });
 });
