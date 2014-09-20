@@ -24,6 +24,8 @@ var SERVICES = {
   }
 };
 
+// XXX eventually register services and ask this, or figure it out
+// somehow non-hacky
 var isServiceStateless = function(service) {
   if (service === SERVICES['advice']) {
     return true;
@@ -77,7 +79,9 @@ app.get('/sms', function(req, res) {
 
     // They have started a new service. Clear the session for the last service they were on.
     if (lastService) {
-      request(service + "/clear?number=" + number);
+      // Note the empty function is required so the app will not crash if the
+      // `/clear` endpoint does not exist.
+      request(service + "/clear?number=" + number, function() {});
     }
 
     // Remember the service for next time
