@@ -50,6 +50,7 @@ var handleMessage = function(req, res) {
     var state = activeUsers[number];
     if (state.isBusy() && USER_STATE_INCLUDE) {
       res.status(400).end();
+      return;
     }
 
     state.setUserState(USER_STATE.PENDING);
@@ -64,7 +65,6 @@ var handleMessage = function(req, res) {
       var result = reply + "\n" + messageHelp;
       console.log(result);
       res.status(200).json({message: result, number: number});
-      return;
     });
 
   } else if (!isNaN(message)) {
@@ -73,6 +73,7 @@ var handleMessage = function(req, res) {
     var url = state.getArticleLink(index);
     if (!url) {
       res.status(400).end();
+      return;
     }
 
     state.setUserState(USER_STATE.PENDING);
@@ -82,13 +83,12 @@ var handleMessage = function(req, res) {
       if (error) {
         console.log(error);
         res.status(400).end();
+        return;
       }
       console.log(text);
       res.status(200).json({message: text, number: number});
     });
   }
-
-  res.status(400).end();
 };
 
 app.get(messageEndpoint, handleMessage);
