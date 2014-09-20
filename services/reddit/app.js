@@ -21,6 +21,7 @@ var isImage = function(url) {
 };
 
 var makeRedditRequest = function(page, number, res) {
+    console.log("reddit request from " + page);
     request("http://reddit.com/top.json?limit=100",
         function(error, response, body) {
             var json = JSON.parse(body);
@@ -31,12 +32,14 @@ var makeRedditRequest = function(page, number, res) {
             var response = "";
             var num = 1;
             json.data.children = json.data.children.splice(page, 5);
+            console.log(json.data.children.length);
             for (var x in json.data.children) {
                 var child = json.data.children[x].data;
                 var title = child.title;
                 response += (num++) + ".) " + title + "\n";
             }
 
+            console.log(response);
             res.send(JSON.stringify({
                 message: response,
                 number: number
@@ -98,7 +101,9 @@ app.get('/sms', function(req, res) {
 
     if (message.trim().toLowerCase() == "more" ||
             message.trim().toLowerCase() == "next") {
+        console.log("pagination");
         var state = STATE.getState(number);
+        console.log(state);
         if (!state.page) {
             res.status(400).end();
             return;
