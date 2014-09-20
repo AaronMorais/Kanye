@@ -1,7 +1,7 @@
 {
   "name": "kanye",
   "version": "0.0.1",
-  "description": "Hacker News Module",
+  "description": "Kanye is your friend with WiFi. You can ask him to do anything you would normally do if you had the Internet and he texts you back exactly what you want to know.",
   "main": "hn.js",
   "scripts": {
     "test": "node hn.js"
