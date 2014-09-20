@@ -11,8 +11,9 @@ var USER_STATE_INCLUDE = false;
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
 
-var messageHelp = "Yo hit me up with dem digits of what you want to read, or " +
+var listMessageHelp = "Yo hit me up with dem digits of what you want to read, or " +
                   "send me \"more\" to see more good shit";
+var articleMessageHelp = "Reply me \"more\" for more good sh*t";
 
 var activeUsers = {};
 
@@ -43,8 +44,9 @@ var handleMessage = function(req, res) {
 
     } else if (activeUsers[number].getUserState() === USER_STATE.READING
         && message === "more") {
+      var state = activeUsers[number];
       // Wants to read more
-      var text = state.getReadingBlock();
+      var text = state.getReadingBlock() + "\n" + articleMessageHelp;
       console.log("Reading more");
       res.send({message: text});
     }
@@ -65,7 +67,7 @@ var handleMessage = function(req, res) {
         return;
       }
 
-      var result = reply + "\n" + messageHelp;
+      var result = reply + "\n" + listMessageHelp;
       console.log(result, "Sending a text");
       res.status(200).json({message: result});
     });

@@ -2,7 +2,7 @@
  * State class to handle where the user is in Hacker News
  */
 var USER_STATE = require("./constants").USER_STATE;
-var maxTextLength = 1555;
+var maxTextLength = 1500;
 var pageLength = 30;
 var pageIncr = 5;
 
