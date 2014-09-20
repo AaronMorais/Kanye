@@ -41,16 +41,19 @@ app.get('/sms', function(req, res) {
                     res.status(200).end();
                 } else {
                     request(url).pipe(article(url, function(err, result) {
-                      if (err) {
-                        res.send(JSON.stringify({
-                            message: "Sorry, couldn't display that post.",
-                            number: req.query.number
-                        }));
-                        return;
-                      }
-                      console.log(result.text);
-                      res.send(result.text.substring(0, 1500));
-                      res.status(200).end();
+                        if (err) {
+                            res.send(JSON.stringify({
+                                message: "Sorry, couldn't display that post.",
+                                number: req.query.number
+                            }));
+                            return;
+                        }
+                        console.log(result.text);
+                        res.send({
+                            message: result.text.substring(0, 1500),
+                            number: req.query.number;
+                        });
+                        res.status(200).end();
                     }));
                 }
         });
