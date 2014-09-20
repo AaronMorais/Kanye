@@ -6,6 +6,7 @@ var WolframClient = require('node-wolfram');
 var Wolfram = new WolframClient('EJ8WJG-W8GW3U9XUE');
 
 function formatResult(result) {
+	if (!result.queryresult) return "";
     for(var a=0; a<result.queryresult.pod.length; a++) {
         var pod = result.queryresult.pod[a];
         if (pod.$.title != "Input" &&
