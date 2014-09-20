@@ -8,7 +8,8 @@ var Wolfram = new WolframClient('EJ8WJG-W8GW3U9XUE');
 function formatResult(result) {
     for(var a=0; a<result.queryresult.pod.length; a++) {
         var pod = result.queryresult.pod[a];
-        if (pod.$.title != "Input") {
+        if (pod.$.title != "Input" &&
+        	pod.$.title != "Input interpretation") {
             if (pod.subpod.length) {
                 var subpod = pod.subpod[0];
                 if (subpod.plaintext.length) {
