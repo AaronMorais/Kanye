@@ -1,5 +1,6 @@
 var express = require('express');
 var request = require('request');
+var redis   = require('redis');
 var config  = require('./config');
 var kanye   = require('./kanye');
 
@@ -7,22 +8,31 @@ var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
 // Start the express app
 var app = express();
+var redisClient = redis.createClient();
 
 var KANYE_PORT = config.DEBUG ? 8000 : 80;
 // Services object
 var SERVICES = {
-  advice: 'http://127.0.0.1:3000',
-  hn: 'http://127.0.0.1:3001',
-  wolfram: 'http://127.0.01:4000',
-  reddit: 'http://127.0.0.1:3002',
-  gmail: 'http://127.0.0.1:3003',
+  advice    : 'http://127.0.0.1:3000',
+  hn        : 'http://127.0.0.1:3001',
+  wolfram   : 'http://127.0.0.1:4000',
+  reddit    : 'http://127.0.0.1:3002',
+  inbox     : 'http://127.0.0.1:3003',
   getServiceFromMessage: function(message) {
+    // This will return null if no service found.
     return this[message.toLowerCase().split(/\s+/)[0]];
   }
 };
 
-// Global var maintaining current command state per phone number
-var g_states = {};
+var isServiceStateless = function(service) {
+  if (service === SERVICES['advice']) {
+    return true;
+  }
+  return false;
+};
+
+// Global variable keeps track of the last service that was used by a number.
+var g_lastService = {};
 
 // The front-end stuff originates from here
 app.get('/', function(req, res) {
@@ -56,55 +66,58 @@ app.get('/test', function(req, res) {
 // Twilio will ping this when we receieve an SMS
 app.get('/sms', function(req, res) {
   var isLocalTest = req.query.Test;
-  var number = req.query.From;
-  var message = req.query.Body;
-  var state = g_states[number];
+  var number      = req.query.From;
+  var message     = req.query.Body;
+  var lastService = g_lastService[number];
 
   var service;
 
   if (SERVICES.getServiceFromMessage(message)) {
     service = SERVICES.getServiceFromMessage(message);
 
-    if (config.DEBUG) {
-      console.log('Service: %s', service);
+    // They have started a new service. Clear the session for the last service they were on.
+    if (lastService) {
+      request(service + "/clear?number=" + number);
     }
 
-    // Update the state and tell the old state we are clearing it
-    g_states[number] = service;
-    if (state) {
-      request(state + "/clear?number=" + number);
-    }
-    } else if (state) {
-      service = state;
+    // Remember the service for next time
+    if (isServiceStateless(service)) {
+      g_lastService[number] = undefined;
     } else {
-      service = SERVICES.wolfram;
-      console.log('Falling back to Wolfram Alpha service.');
+      g_lastService[number] = service;
     }
+  } else if (lastService) {
+    // They didn't match a service, so they may be exploring the last service they were on.
+    service = lastService;
+  } else {
+    service = SERVICES.wolfram;
+    console.log('Falling back to Wolfram Alpha service.');
+  }
 
-    // Route the request to the proper service.
-    // The service should return a JSON object `{ message: ... }` which will contain text
-    // to be sent to the user.
-    request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
-      function(error, response, body) {
-        if (error || response.statusCode != 200) {
-          // Don't fallback to wolfram alpha, it could've been the one that failed!
-          // Send a 'try again later' instead.'
-          kanye.sendMessage(number, 'Sorry, I\'m really busy right now. Hit me up later.');
-          console.error('Service %s failed.', service);
-          return;
-        }
+  // Route the request to the proper service.
+  // The service should return a JSON object `{ message: ... }` which will contain text
+  // to be sent to the user.
+  request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
+    function(error, response, body) {
+      if (error || response.statusCode != 200) {
+        // Don't fallback to wolfram alpha, it could've been the one that failed!
+        // Send a 'try again later' instead.'
+        kanye.sendMessage(number, 'Sorry, I\'m really busy right now. Hit me up later.');
+        console.error('Service %s failed.', service);
+        return;
+      }
 
-        var outgoingMessage = JSON.parse( body ).message;
+      var outgoingMessage = JSON.parse( body ).message;
 
-        // Instead of sending a test message, inline the result directly to webpage.
-        if (isLocalTest) {
-          res.status(200).send(outgoingMessage);
-        } else {
-          // Send the outgoing message back to the user
-          kanye.sendMessage(number, outgoingMessage);
-          res.status(200).end();
-        }
-      });
+      // Instead of sending a test message, inline the result directly to webpage.
+      if (isLocalTest) {
+        res.status(200).send(outgoingMessage);
+      } else {
+        // Send the outgoing message back to the user
+        kanye.sendMessage(number, outgoingMessage);
+        res.status(200).end();
+      }
+    });
   });
 
 app.get('/sendsms', function(req, res) {

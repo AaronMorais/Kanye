@@ -1,8 +1,11 @@
-var express = require('express');
-var app = express();
-var kanye = require("../../kanye");
-var ADVICE_KEY = 'previous_advice';
+var express     = require('express');
+var app         = express();
+var kanye       = require('../../kanye');
+var redis       = require('redis');
+var redisClient = redis.createClient();
 
+var ADVICE_KEY  = 'previous_advice';
+// Always append to bottom if you add to this!
 var ADVICE_ARRAY = [
     "I am God's vessel. But my greatest pain in life is that I will never be able to see myself perform live.",
     "Would you believe in what you believe in if you were the only one who believed it?",
@@ -56,32 +59,59 @@ var ADVICE_ARRAY = [
     "Sometimes people write novels and they just be so wordy and so self-absorbed.",
     "I can always tell if a band has a British rhythm section due to the gritty production."
 ];
+var ADVICE_ARRAY_SIZE = ADVICE_ARRAY.length;
 
-var currentAdvice = 0;
-var adviceMax = ADVICE_ARRAY.length;
-
-function getAdvice() {
-  var message = ADVICE_ARRAY[currentAdvice];
-  currentAdvice++;
-  if (currentAdvice >= adviceMax) {
-      currentAdvice = 0;
+function incrementIndex(index) {
+  if ((index + 1) >= ADVICE_ARRAY_SIZE) {
+    index = 0;
+  } else {
+    index++;
   }
-  return message;
+
+  return index;
 }
+
+function redisKeyForUserNumber(userNumber) {
+  return ADVICE_KEY + userNumber.toString();
+}
+
+function getAdvice(userNumber, callback) {
+  var redisKey      = redisKeyForUserNumber(userNumber);
+  var adviceMessage;
+
+  redisClient.get(redisKey, function(err, response) {
+    // Response is null when key is missing.
+    if (response) {
+      var lastIndex = parseInt(response, 10);
+      var nextIndex = incrementIndex(lastIndex);
+
+      redisClient.set(redisKey, nextIndex, function(err, response) {
+        adviceMessage = ADVICE_ARRAY[nextIndex];
+        callback( adviceMessage );
+      });
+    } else {
+      // If response is null, then initialize the key at 0.
+      // Note: Redis only accepts string values
+      redisClient.set(redisKey, '0', function(err, response) {
+        adviceMessage = ADVICE_ARRAY[0];
+        callback( adviceMessage );
+      });
+    }
+  });
+}
+
+app.get('/clear', function(req, res) {
+  res.status(200).end();
+});
 
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
+  var userNumber = req.query.number;
 
-  // TODO . this should never happen, add invariant.
-  if (req.query.message.toLowerCase() != "advice") {
-    res.status(400).end();
-    return;
-  }
-
-  var message = getAdvice();
-
-  // Return this JSON object. Kanye will handle sending the text message.
-  res.status(200).json({ number: req.query.number, message: message });
+  getAdvice(userNumber, function(adviceMessage) {
+    // Return this JSON object. Kanye will handle sending the text message.
+    res.status(200).json({ message: adviceMessage });
+  });
 });
 
 app.listen(3000);

@@ -21,4 +21,4 @@ Kanye is loved by fans all over because he allows you to...
 
 All without data! Wow! Thanks Kanye!
 
-Visit [www.getkanye.com](www.getkanye.com) for more information.
+Visit [www.getkanye.com](http://www.getkanye.com) for more information.

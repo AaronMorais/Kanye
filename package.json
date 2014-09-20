@@ -12,7 +12,9 @@
     "request": "",
     "twilio": "",
     "node-wolfram": "",
-    "article": ""
+    "article": "",
+    "redis": "",
+    "hiredis": ""
   },
   "repository": {
     "type": "git",
