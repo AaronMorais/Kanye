@@ -15,7 +15,7 @@ var formatResult = function(result) {
             if (pod.subpod.length) {
                 var subpod = pod.subpod[0];
                 if (subpod.plaintext.length) {
-                    return subpod.plaintext[0];
+                    return pod.$.title + ":\n" + subpod.plaintext[0];
                 }
             }
 	    }
