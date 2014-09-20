@@ -23,10 +23,13 @@ app.get('/sms', function(req, res) {
                 var child = json.data.children[num-1].data;
                 var url = child.url;
 
-
                 console.log(url);
 
-                kanye.sendMessage(req.query.number, null, url);
+                // kanye.sendMessage(req.query.number, null, url);
+                res.send(JSON.stringify({
+                    media: url,
+                    number: req.query.number
+                }));
         });
 
         return;

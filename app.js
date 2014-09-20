@@ -111,14 +111,16 @@ app.get('/sms', function(req, res) {
         return;
       }
 
-      var outgoingMessage = JSON.parse( body ).message;
+      var bodyJSON = JSON.parse( body );
+      var outgoingMessage = bodyJSON.message;
+      var outgoingMedia = bodyJSON.media;
 
       // Instead of sending a test message, inline the result directly to webpage.
       if (isLocalTest) {
         res.status(200).send(outgoingMessage);
       } else {
         // Send the outgoing message back to the user
-        kanye.sendMessage(number, outgoingMessage);
+        kanye.sendMessage(number, outgoingMessage, outgoingMedia);
         res.status(200).end();
       }
     });
