@@ -1,5 +1,8 @@
 var express = require('express');
 var request = require('request');
+var config = require('/config');
+
+var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
 // Start the express app
 var app = express();
@@ -10,7 +13,7 @@ var SERVICES = {
     hn: "http://127.0.0.1:3001",
     test: "http://127.0.0.1",
     getServiceFromMessage: function(message) {
-        return this[message.split(/\s+/)[0]];
+        return this[message.toLowerCase().split(/\s+/)[0]];
     }
 };
 
@@ -57,7 +60,14 @@ app.get('/sms', function(req, res) {
 });
 
 app.get('/sendsms', function(req, res) {
-    console.log("HELLO");
+    var message = req.query.message;
+    var number = req.query.number;
+
+    twilio.sendMessage({
+        to: number,
+        from: '',
+        body: message
+    });
 
     res.status(200).end();
 });

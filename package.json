@@ -9,7 +9,8 @@
   "dependencies": {
     "jsdom": "1.0.0-pre.7",
     "express": "",
-    "request": ""
+    "request": "",
+    "twilio": ""
   },
   "repository": {
     "type": "git",
