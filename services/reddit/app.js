@@ -51,7 +51,7 @@ app.get('/sms', function(req, res) {
                         console.log(result.text);
                         res.send({
                             message: result.text.substring(0, 1500),
-                            number: req.query.number;
+                            number: req.query.number
                         });
                         res.status(200).end();
                     }));
