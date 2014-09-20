@@ -2,7 +2,7 @@ var keywords = ["hn", "more"];
 
 var isValidCommand = function(command) {
   // Handle a string
-  if (typeof command === "string") {
+  if (typeof command === "string" || !isNaN(command)) {
     if (keywords.indexOf(command) > -1) {
       return true;
     } else {
