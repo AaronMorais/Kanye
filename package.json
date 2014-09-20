@@ -14,6 +14,7 @@
     "node-wolfram": "",
     "article": "",
     "redis": "",
+    "googleapis": "",
     "hiredis": ""
   },
   "repository": {

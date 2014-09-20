@@ -65,6 +65,40 @@ app.get('/test', function(req, res) {
     });
 });
 
+/*
+  // **** START GMAIL AUTHORIZATION CODE ****
+  This endpoint handles authentication with GMail.
+*/
+
+app.get('/gmail', function(req, res) {
+  var userNumber = req.query.number;
+
+  request({ url: SERVICES.inbox + '/auth_url', qs: { number: userNumber } },
+    function(error, response, body) {
+      // Set the cookie for later use.
+      res.cookie({ number: userNumber }).redirect(body);
+    });
+});
+
+app.get('/oauth2callback', function(req, res) {
+  var authorizationCode = req.query.code;
+  var number = req.cookies.number;
+
+  request({ url: SERVICES.inbox + '/get_tokens', qs: { code: authorizationCode, number: number }},
+    function(error, response, body) {
+      if (error) {
+        res.status(500).send('Failed to get authentication token.');
+        return;
+      }
+
+      res.status(200).send('Token authentication successful. You can now use the inbox command');
+    });
+});
+
+// **** END GMAIL AUTHORIZATION CODE ****
+
+
+
 // Twilio will ping this when we receieve an SMS
 app.get('/sms', function(req, res) {
   var isLocalTest = req.query.Test;
@@ -106,8 +140,14 @@ app.get('/sms', function(req, res) {
       if (error || response.statusCode != 200) {
         // Don't fallback to wolfram alpha, it could've been the one that failed!
         // Send a 'try again later' instead.'
-        kanye.sendMessage(number, 'Sorry, I\'m really busy right now. Hit me up later.');
-        console.error('Service %s failed.', service);
+        var errorMessage = 'Sorry, I\'m really busy right now. Hit me up later.';
+        // Sometimes the service can tell us exactly what went wrong.
+        if (typeof(body) === 'object' && object.error) {
+          errorMessage = object.error;
+        }
+
+        kanye.sendMessage(number, errorMessage);
+        console.error('Service %s failed due to %s', service, error);
         return;
       }
 
