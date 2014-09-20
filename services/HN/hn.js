@@ -4,7 +4,7 @@ var State = require("./state");
 var request = require('request');
 var app = require("express")();
 
-var messageEndpoint = "/message/";
+var messageEndpoint = "/sms/";
 var clearEndpoint = "/clear/";
 var baseUrl = "http://localhost:80/";
 
