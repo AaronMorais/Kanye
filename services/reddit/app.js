@@ -46,7 +46,11 @@ app.get('/sms', function(req, res) {
             }
 
             console.log(response.length);
-            kanye.sendMessage(req.query.number, response);
+            // kanye.sendMessage(req.query.number, response);
+            res.send(JSON.stringify({
+                message: response,
+                number: req.query.number
+            }));
             res.status(200).end();
     });
 
