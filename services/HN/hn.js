@@ -28,8 +28,10 @@ var messageEndpoint = function(req, res) {
 
   // Invalid data set from main server
   if (!message || !number) {
-    res.send(400);
+    res.status(400).end();
+    return;
   }
+
   var response = handleMessage(message, number, function(reply) {
     request(baseUrl + "sendsms?message=" + reply +
 			"&number=" + encodeURIComponent(number)
@@ -75,4 +77,4 @@ handleMessage("lol", "123456", function(reply) {
 app.get(messageEndpoint, handleMessage);
 app.get(clearEndpoint, handleClear);
 
-app.listen(3000);
+app.listen(3001);
