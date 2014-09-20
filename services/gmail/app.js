@@ -3,6 +3,7 @@ var kanye         = require('../../kanye');
 var google        = require('googleapis');
 var config        = require('../../config');
 var redis         = require('redis');
+var async         = require('async');
 var gmail         = google.gmail('v1');
 var OAuth2Client  = google.auth.OAuth2;
 var app           = express();
@@ -46,17 +47,11 @@ app.get('/get_tokens', function(req, res) {
   oauth2Client.getToken(req.query.code, function(err, tokens) {
     // Recall: redis only accepts string value. Be sure to parse JSON when reading.
     redisClient.set(redisKey, JSON.stringify( tokens ), function() {
-      console.log('Stored tokens %s for %s', tokens, userNumber);
+      console.log('Stored tokens "%o" for "%s"', tokens, userNumber);
+      res.status(200).end()
     });
   });
 });
-
-app.get('/clear', function(req, res) {
-  var userNumber = req.query.number;
-  delete activeUsers[ userNumber ];
-  console.log('Gmail: cleared session for %s', userNumber);
-});
-
 
 var handleInbox = function(req, res, oauthClient) {
   // Setup the inbox state.
@@ -72,19 +67,62 @@ var handleInbox = function(req, res, oauthClient) {
     } else {
       var messages          = response.messages;
       var nextPageToken     = response.nextPageToken;
-      var outgoingMessage;
+      var currentState      = activeUsers[ req.query.number ];
 
       // Record this in case they want to see more emails
-      activeUsers[ req.query.number ].setNextPageToken( nextPageToken );
+      currentState.setNextPageToken( nextPageToken );
 
-      // For each of the messages received, we get the details of the message.
+      // API requests to get details on each of the messages
+      var getMessageJobs = [];
       for (var i = 0; i < messages.length; i++) {
-        gmail.users.message.get();
+        var messageId = messages[i];
+        getMessageJobs.push(function(callback) {
+          gmail.users.message.get({ userId: 'me', id: messageId, auth: oauthClient },
+            function(err, response) {
+              if (err) return callback(err);
+
+              var emailMessageTitle;
+              var emailMessageBody;
+
+              var emailMessage = response;
+              // Find the subject line and contents of the email
+              for (var j = 0; j < emailMessage.headers; j++) {
+                console.log('> Iterating over header %s', emailMessage.headers[j].name);
+                if (emailMessage.headers[j].name === 'Subject') {
+                  emailMessageTitle = emailMessage.headers[j].value;
+                  break;
+                }
+              }
+              // Find the body of the message - it will be "attached" to the email
+              var attachments = emailMessage.payload.body;
+              for (var j = 0; j < attachments.length; j++) {
+                if (attachments[j].data) {
+                  emailMessageBody = attachments[j].data;
+                  break;
+                }
+              }
+
+              currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
+              callback();
+            });
+        });
       }
 
-      req.status(200).json({
-        message: outgoingMessage
-      });
+      if (messages.length === 0) {
+        req.status(403).json({ error: 'You have no emails in your inbox.' });
+      } else {
+        // Get the message contents for all messages in the inbox.
+        // Keep these stored, so if we read them later we dont do another API request.
+        async.parallel(getMessageJobs, function(callback) {
+          // This should be filled out by this point. Build the message to send.
+          var outgoingMessage = currentState.buildInboxMessage();
+
+          req.status(200).json({
+            message: outgoingMessage
+          });
+
+        });
+      }
     }
   });
 };
@@ -95,10 +133,20 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 var handleSendMessage = function(req, res, message, oauthClient) {
 };
 
-app.get('/sms', function(req, res) {
+app.get('/clear', function(req, res) {
   var userNumber = req.query.number;
-  var message    = req.query.message;
+  delete activeUsers[ userNumber ];
+  console.log('Gmail: cleared session for %s', userNumber);
+});
+
+app.get('/sms', function(req, res) {
+  console.log( req.query );
+
+  var userNumber = req.query.number;
+  var textMessage= req.query.message;
   var redisKey   = redisTokenKey( userNumber );
+
+  console.log( textMessage );
 
   // Check if this user has authenticated.
   redisClient.get(redisKey, function(err, response) {
@@ -109,14 +157,17 @@ app.get('/sms', function(req, res) {
       var oauthClient = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
       var credentials = JSON.parse( response );
       var lastState   = activeUsers[ userNumber ];
+      var message     = textMessage;
+
+      console.log( textMessage );
 
       oauthClient.setCredentials(credentials);
 
       if (message === 'inbox') {
         handleInbox(req, res, oauthClient);
-      } else if (isNumber(message)) {
+      } else if (kanye.isNumber(message)) {
         handleReadMessage(req, res, parseInt(message, 10), oauthClient);
-      } else if (message.substring(0,7) === 'compose') {
+      } else if (message && message.substring(0,7) === 'compose') {
         // They want to send a message. Parse the string, ensure its valid, then try to send.
         var messageParts = message.split(' ');
 

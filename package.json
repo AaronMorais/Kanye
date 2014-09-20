@@ -15,7 +15,10 @@
     "article": "",
     "redis": "",
     "googleapis": "",
-    "hiredis": ""
+    "hiredis": "",
+    "cookie-session": "",
+    "cookies": "",
+    "debug": ""
   },
   "repository": {
     "type": "git",

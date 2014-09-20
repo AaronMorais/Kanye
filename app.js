@@ -1,16 +1,15 @@
-var express = require('express');
-var request = require('request');
-var redis   = require('redis');
-var config  = require('./config');
-var kanye   = require('./kanye');
-
-var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
+var express       = require('express');
+var request       = require('request');
+var redis         = require('redis');
+var cookieSession = require('cookie-session');
+var config        = require('./config');
+var kanye         = require('./kanye');
+var twilio        = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
 // Start the express app
 var app = express();
-app.use(
-  express.static(__dirname + '/static')
-);
+app.use(express.static(__dirname + '/static'));
+app.use(cookieSession({ keys: [config.SECRET_KEY]}));
 
 var redisClient = redis.createClient();
 
@@ -82,13 +81,14 @@ app.get('/gmail', function(req, res) {
   request({ url: SERVICES.inbox + '/auth_url', qs: { number: userNumber } },
     function(error, response, body) {
       // Set the cookie for later use.
+      req.session.number = userNumber;
       res.cookie({ number: userNumber }).redirect(body);
     });
 });
 
 app.get('/oauth2callback', function(req, res) {
   var authorizationCode = req.query.code;
-  var number = req.cookies.number;
+  var number = req.session.number;
 
   request({ url: SERVICES.inbox + '/get_tokens', qs: { code: authorizationCode, number: number }},
     function(error, response, body) {
@@ -120,6 +120,10 @@ app.get('/sms', function(req, res) {
   g_isWaiting[number] = true;
 
   var service;
+
+  if (config.DEBUG) {
+    console.log('Received SMS: %s - Last service: %s', message, lastService);
+  }
 
   if (SERVICES.getServiceFromMessage(message)) {
     service = SERVICES.getServiceFromMessage(message);
