@@ -28,12 +28,14 @@ var messageEndpoint = function(req, res) {
   if (!message || !number) {
     res.send(400);
   }
-  var response = handleMessage(message, number);
-  res.write(response);
-  res.send(200);
+  var response = handleMessage(message, number, function(reply) {
+    res.write(reply);
+    res.send(200);
+    return;
+  });
 };
 
-var handleMessage = function(message, number) {
+var handleMessage = function(message, number, callback) {
   if (!(number in activeUsers)) {
     activeUsers[number] = new State();
   }
@@ -47,40 +49,29 @@ var handleMessage = function(message, number) {
     done: function (errors, window) {
       var $ = window.$;
       articles = $("td.title:not(:last) a");
-      $("td.title:not(:last) a").each(function() {
-        console.log($(this).text());
+      // Grab 5 pages and increment counter
+      var elements = articles.slice(
+        state.getPage(),
+        state.getPage()+state.getNumSend()
+      );
+      state.incrementPage();
+
+      // Get only the text
+      var reply = $.map(elements, function(elem) {
+        return $(elem).text();
       });
+      callback(reply);
     }
   });
-
-  var elements = articles.slice(state.getPage(),
-                                state.getPage()+state.getNumSend()
-                               );
-  state.incrementPage();
-  return elements.map(function(elem) {
-    return $(elem).text();
-  });
 };
+/*
+handleMessage("lol", "123456", function(reply) {
+  for (var i=0; i<reply.length; i++) {
+    console.log(reply[i]);
+  }
+});*/
 
 app.get(messageEndpoint, handleMessage);
 app.get(clearEndpoint, handleClear);
-
-/*
-jsdom.env({
-  url: serviceUrl,
-  scripts: serviceScripts,
-  done: function (errors, window) {
-    var $ = window.$;
-    console.log("HN Links");
-    var test = $("td.title:not(:last) a");
-    test = test.splice(0, 5);
-    $(test).each(function() {
-      console.log($(this).text());
-    });
-    /*$("td.title:not(:last) a").each(function() {
-      console.log($(this).text());
-    });
-  }
-});*/
 
 app.listen(3000);
