@@ -8,12 +8,14 @@
   },
   "dependencies": {
     "jsdom": "1.0.0-pre.7",
-    "express": ""
+    "express": "",
+    "request": "",
+    "twilio": ""
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/AaronMorais/Kanye/"
   },
   "author": "Hack The North",
-  "license": "ISC"
+  "license": "MIT"
 }
