@@ -1,8 +1,9 @@
 var express = require('express');
 var app = express();
 var request = require('request');
-var wolfram = require('node-wolfram')(config.WOLFRAM_KEY);
 var config = require("../../config");
+var wolfram = require('node-wolfram');
+wolfram = new wolfram(config.WOLFRAM_KEY);
 
 var formatResult = function(result) {
 	if (!result.queryresult.pod) return "";
