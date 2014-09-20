@@ -181,7 +181,7 @@ app.get('/sendsms', function(req, res) {
       to: number,
       from: config.PHONE_NUMBER,
       mediaUrl: media,
-      message: unescape(message)
+      body: unescape(message)
     });
   } else {
     twilio.sendMessage({
