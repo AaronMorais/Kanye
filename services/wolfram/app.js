@@ -26,7 +26,8 @@ var formatResult = function(result) {
       var answer  = pod.subpod[0].plaintext[0];
 
       // Some title don't make sense to add. Filter them out there.
-      return shouldFilterOutTitle(title) ? answer : title + ':\n' + answer;
+      var resultString = shouldFilterOutTitle(title) ? answer : title + ':\n' + answer;
+      resultString.replace("Wolfram|Alpha", "Kanye");
     }
   }
   return '';
