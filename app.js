@@ -1,6 +1,6 @@
 var express = require('express');
 var request = require('request');
-var config = require('/config');
+var config = require('./config');
 
 var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
@@ -53,7 +53,7 @@ app.get('/sms', function(req, res) {
 
     // Now we know which service we should notify
     // lets build a request and notify it
-    request(encodeURIComponent(service + "/sms?message=" + message + "&number=" + number));
+    request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number));
 
     // OK everything went well, send 200 and end request
     res.status(200).end();
@@ -65,7 +65,7 @@ app.get('/sendsms', function(req, res) {
 
     twilio.sendMessage({
         to: number,
-        from: '',
+        from: config.PHONE_NUMBER,
         body: message
     });
 
