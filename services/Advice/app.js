@@ -18,6 +18,10 @@ function getAdvice() {
 
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
+	if (req.query.message.toLowerCase() != "advice") {
+		res.status(400).end();
+	}
+	
     var message = getAdvice();
 	request("http://localhost:80/sendsms?message=" +
 			message +
