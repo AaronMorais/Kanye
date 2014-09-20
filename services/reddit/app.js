@@ -10,7 +10,7 @@ app.get('/sms', function(req, res) {
         return;
     }
 
-    request("http://reddit.com/top.json", function(error, response, body) {
+    request("http://reddit.com/top.json?limit=5", function(error, response, body) {
         console.log(body);
         var json = JSON.parse(body);
 
@@ -21,7 +21,7 @@ app.get('/sms', function(req, res) {
             response += title + "\n";
         }
 
-        console.log(response);
+        console.log(response.length);
         kanye.sendMessage(req.query.number, response);
         res.status(200).end();
     });
