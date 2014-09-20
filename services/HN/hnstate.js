@@ -19,7 +19,7 @@ State.prototype.getArticleIndex = function() {
 };
 
 State.prototype.getPageNum = function() {
-  return ((this.currentArticle+1) / 40) + 1;
+  return ((this.currentArticle+1) / pageLength) + 1;
 };
 
 State.prototype.setContentState = function(state) {
