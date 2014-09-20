@@ -136,7 +136,7 @@ app.get('/sendsms', function(req, res) {
     twilio.sendMessage({
       to: number,
       from: config.PHONE_NUMBER,
-      mediaUrls: [media]
+      mediaUrl: media
     });
   } else {
     twilio.sendMessage({
