@@ -92,6 +92,8 @@ var handleMessage = function(req, res) {
         res.status(400).end();
         return;
       }
+      var text = text+ "\n" + articleMessageHelp;
+      console.log("Reading more");
       console.log(text);
       res.status(200).json({message: text});
     });
