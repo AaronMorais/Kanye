@@ -11,7 +11,8 @@
     "express": "",
     "request": "",
     "twilio": "",
-    "node-wolfram": ""
+    "node-wolfram": "",
+    "article": ""
   },
   "repository": {
     "type": "git",

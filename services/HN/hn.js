@@ -1,19 +1,17 @@
 // Print all of the news items on Hacker News
-var jsdom = require("jsdom");
-var State = require("./state");
-var request = require('request');
+var request = require("request");
 var app = require("express")();
+
+var scraper = require("./scraper");
+var kanye = require("../../kanye");
 
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
 var baseUrl = "http://localhost:80/";
 
-var keywords = ["hn", "more"];
 var messageHelp = "Yo hit me up with dem digits of what you want to read, or " +
                   "send me \"more\" to see more good shit";
 
-var serviceUrl = "http://news.ycombinator.com";
-var serviceScripts = ["http://code.jquery.com/jquery.js"];
 var activeUsers = {};
 
 var sendText = function(message, number) {
@@ -22,32 +20,10 @@ var sendText = function(message, number) {
   );
 };
 
-var isValidCommand = function(command) {
-  // Handle a string
-  if (typeof command === "string") {
-    if (command in keywords) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // Handle a number
-  if (typeof command === "number") {
-    var index = parseInt(command);
-    if (index <= 5 && index >= 1) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  return false;
-};
-
 var handleClear = function(req, res) {
   var user = req.query.user;
   // If no user was given or it doesn't exist in active users
-  if (!user || (user && !(user in activeUsers))) {
+  if (!user || (user && activeUsers.indexOf(user) === -1)) {
     res.status(400).end();
   }
   delete activeUsers[user];
@@ -64,50 +40,19 @@ var handleMessage = function(req, res) {
     return;
   }
 
-  var response = handleScrape(message, number, function(reply) {
-    var result = message + "\n" + messageHelp;
-    sendText(result, number);
-    res.status(200).end();
-  });
-};
-
-var handleScrape = function(message, number, callback) {
-  if (!isValidCommand(message)) {
-    return res.status(400).status();
-  }
-
-  if (!(number in activeUsers)) {
+  if (activeUsers.indexOf(number) === -1) {
     activeUsers[number] = new State();
   }
 
-  var state = activeUsers[number];
-
-  jsdom.env({
-    url: serviceUrl + "/news?p=" + state.getPageNum(),
-    scripts: serviceScripts,
-    done: function (errors, window) {
-      var $ = window.$;
-      var articles = $("td.title:not(:last) a");
-
-      // Grab 5 pages and increment counter
-      var elements = articles.slice(
-        state.getArticleIndex(),
-        state.getArticleIndex()+state.getNumSend()
-      );
-      state.incrementArticleIndex();
-
-      // Get only the text
-      var reply = $.map(elements, function(elem) {
-        return $(elem).text();
-      });
-
-      // Append the index to the front
-      for (var i=0; i<reply.length; i++) {
-        reply[i] = (i+1).toString() + ". " + reply[i];
-      }
-
-      callback(reply.join("\n"));
+  handleScrape(message, number, activeUsers[number], function(reply, error) {
+    // TODO: Handle error properly through the state
+    if (error) {
+      res.status(400).end();
     }
+
+    var result = message + "\n" + messageHelp;
+    kanye.sendMessage(result, number);
+    res.status(200).end();
   });
 };
 
