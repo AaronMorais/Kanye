@@ -64,7 +64,7 @@ var handleMessage = function(req, res) {
 
       var result = reply + "\n" + messageHelp;
       console.log(result);
-      res.status(200).json({message: result, number: number});
+      res.status(200).json({message: result});
     });
 
   } else if (!isNaN(message)) {
@@ -86,7 +86,7 @@ var handleMessage = function(req, res) {
         return;
       }
       console.log(text);
-      res.status(200).json({message: text, number: number});
+      res.status(200).json({message: text});
     });
   }
 };
