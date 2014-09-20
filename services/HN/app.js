@@ -41,14 +41,17 @@ var handleMessage = function(req, res) {
     if (!activeUsers[number] || message === "hn") {
       // First time using hn or restarting the state
       activeUsers[number] = new State();
+
     } else if (activeUsers[number].getUserState() === USER_STATE.READING
         && message === "more") {
       // Wants to read more
       var text = state.getReadingBlock();
-      res.send({message: text, number: number});
+      console.log("Reading more");
+      res.send({message: text});
     }
     var state = activeUsers[number];
     if (state.isBusy() && USER_STATE_INCLUDE) {
+      console.log("User is busy receiving something");
       res.status(400).end();
       return;
     }
@@ -58,20 +61,22 @@ var handleMessage = function(req, res) {
       state.setUserState(USER_STATE.LIST);
       // TODO: Handle error properly through the state
       if (error) {
+        console.log("Error scraping HN");
         res.status(400).end();
         return;
       }
 
       var result = reply + "\n" + messageHelp;
-      console.log(result);
+      console.log(result, "Sending a text");
       res.status(200).json({message: result});
     });
 
   } else if (!isNaN(message)) {
-    // the message is a number
+    // the message is a number, must zero index
     var index = parseInt(message)-1;
     var url = state.getArticleLink(index);
     if (!url) {
+      console.log("Url can't be found");
       res.status(400).end();
       return;
     }
