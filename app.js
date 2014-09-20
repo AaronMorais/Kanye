@@ -29,10 +29,21 @@ app.get('/sms', function(req, res) {
     var state = g_states[number];
 
     var service;
-    if (state) {
-        service = SERVICES[state];
-    } else {
+
+    if (SERVICES.getServiceFromMessage(message)) {
         service = SERVICES.getServiceFromMessage(message);
+
+        // Update the state and tell the old state we are clearing it
+        g_states[number] = service;
+        request(state + "/clear?number=" + number);
+    } else if (state) {
+        service = state;
+    } else {
+        service = SERVICES.wolfram;
+
+        // TODO remove when wolfram is implemented
+        res.status(404).end();
+        return;
     }
 
     // Now we know which service we should notify
