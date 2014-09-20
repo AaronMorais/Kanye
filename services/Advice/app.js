@@ -19,10 +19,10 @@ function getAdvice() {
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
     var message = getAdvice();
-	request("http://localhost:80/sendsms?message=" +
+	request(encodeURIComponent("http://localhost:80/sendsms?message=" +
 			message +
 			"&number=" +
-			req.query.number);
+			req.query.number));
 	res.status(200).end()
 });
 

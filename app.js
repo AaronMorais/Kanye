@@ -53,7 +53,7 @@ app.get('/sms', function(req, res) {
 
     // Now we know which service we should notify
     // lets build a request and notify it
-    request(service + "/sms?message=" + message + "&number=" + number);
+    request(encodeURIComponent(service + "/sms?message=" + message + "&number=" + number));
 
     // OK everything went well, send 200 and end request
     res.status(200).end();
