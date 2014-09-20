@@ -15,10 +15,11 @@ app.get('/sms', function(req, res) {
         var json = JSON.parse(body);
 
         var response = "";
+        var num = 1;
         for (var x in json.data.children) {
             var child = json.data.children[x].data;
             var title = child.title;
-            response += title + "\n";
+            response += (num++) + ".) " + title + "\n";
         }
 
         console.log(response.length);
