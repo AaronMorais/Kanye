@@ -20,8 +20,11 @@ app.get('/sms', function(req, res) {
                 console.log("Here");
                 var json = JSON.parse(body);
 
-                var child = json.data.children[num-1];
+                var child = json.data.children[num-1].data;
                 var url = child.url;
+
+
+                console.log(url);
 
                 kanye.sendMessage(req.query.number, null, url);
         });
