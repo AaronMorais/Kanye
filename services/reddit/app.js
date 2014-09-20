@@ -104,7 +104,7 @@ app.get('/sms', function(req, res) {
         console.log("pagination");
         var state = STATE.getState(number);
         console.log(state);
-        if (!state.page) {
+        if (typeof state.page == undefined) {
             res.status(400).end();
             return;
         }
