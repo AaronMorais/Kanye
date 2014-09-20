@@ -3,8 +3,8 @@ var jsdom = require("jsdom");
 var State = require("./state");
 var app = require("express")();
 
-var messageEndpoint = "/hn/message/";
-var clearEndpoint = "/hn/clear/";
+var messageEndpoint = "/message/";
+var clearEndpoint = "/clear/";
 
 var serviceUrl = "http://news.ycombinator.com/";
 var serviceScripts = ["http://code.jquery.com/jquery.js"];
