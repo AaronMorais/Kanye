@@ -9,7 +9,8 @@ var formatResult = function(result) {
     for(var a = 0; a < result.queryresult.pod.length; a++) {
         var pod = result.queryresult.pod[a];
         if (pod.$.title != "Input" &&
-        	pod.$.title != "Input interpretation") {
+        	pod.$.title != "Input interpretation" &&
+            pod.$.title != "Plot") {
             if (pod.subpod.length) {
                 var subpod = pod.subpod[0];
                 if (subpod.plaintext.length) {
