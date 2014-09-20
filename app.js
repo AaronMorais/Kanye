@@ -76,12 +76,21 @@ app.get('/sms', function(req, res) {
 app.get('/sendsms', function(req, res) {
     var message = req.query.message;
     var number = req.query.number;
+    var media = req.query.media;
 
-    twilio.sendMessage({
-        to: number,
-        from: config.PHONE_NUMBER,
-        body: message
-    });
+    if (media) {
+        twilio.sendMessage({
+            to: number,
+            from: config.PHONE_NUMBER,
+            mediaUrls: [media]
+        });
+    } else {
+        twilio.sendMessage({
+            to: number,
+            from: config.PHONE_NUMBER,
+            body: message
+        });
+    }
 
     res.status(200).end();
 });
