@@ -1,10 +1,14 @@
 var express = require('express');
+var request = require('request');
+
+// Start the express app
 var app = express();
 
 // Services object
 var SERVICES = {
-    advice: "http://104.131.9.39:3000",
-    hn: "http://104.131.9.39:3001",
+    advice: "http://127.0.0.1:3000",
+    hn: "http://127.0.0.1:3001",
+    test: "http://127.0.0.1",
     getServiceFromMessage: function(message) {
         return this[message.split(/\s+/)[0]];
     }
@@ -31,8 +35,12 @@ app.get('/sms', function(req, res) {
         service = SERVICES.getServiceFromMessage(message);
     }
 
-    console.log(req.query);
-    console.log(service);
+    // Now we know which service we should notify
+    // lets build a request and notify it
+    request(service + "/sms?message=" + message + "&number=" + number);
+
+    // OK everything went well, send 200 and end request
+    res.status(200).end();
 });
 
 app.listen(80);
