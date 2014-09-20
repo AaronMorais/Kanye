@@ -1,7 +1,17 @@
 var express = require('express');
 var app = express();
+var article = require("article");
 var kanye = require("../../kanye");
 var request = require("request");
+
+var STATE = {};
+
+var isImage = function(url) {
+    return  url.indexOf("jpg") != -1 ||
+            url.indexOf("jpeg") != -1 ||
+            url.indexOf("gif") != -1 ||
+            url.indexOf("png") != -1;
+}
 
 // The main app can hit this when an SMS is received
 app.get('/sms', function(req, res) {
@@ -15,7 +25,7 @@ app.get('/sms', function(req, res) {
 
     if (!isNaN(message)) {
         var num = parseInt(message);
-        request("http://reddit.com/top.json?limit=5",
+        request("http://reddit.com/top.json?limit=100",
             function(error, response, body) {
                 console.log("Here");
                 var json = JSON.parse(body);
@@ -23,25 +33,40 @@ app.get('/sms', function(req, res) {
                 var child = json.data.children[num-1].data;
                 var url = child.url;
 
-                console.log(url);
-
-                // kanye.sendMessage(req.query.number, null, url);
-                res.send(JSON.stringify({
-                    media: url,
-                    number: req.query.number
-                }));
+                if (isImage(url)) {
+                    res.send(JSON.stringify({
+                        media: url,
+                        number: req.query.number
+                    }));
+                } else {
+                    request(url).pipe(article(url, function(err, result) {
+                      if (err) {
+                        res.send(JSON.stringify({
+                            message: "Sorry, couldn't display that post.",
+                            number: req.query.number
+                        }));
+                        return;
+                      }
+                      console.log(result);
+                      console.log(result.text);
+                      // state.setReadingText(result.text);
+                      // var articleBlock = state.getReadingBlock();
+                      // callback(articleBlock);
+                    }));
+                }
         });
 
         return;
     }
 
-    request("http://reddit.com/top.json?limit=5",
+    request("http://reddit.com/top.json?limit=100",
         function(error, response, body) {
-            console.log(body);
             var json = JSON.parse(body);
 
             var response = "";
             var num = 1;
+
+            json.data.children = json.data.children.splice(0, 5);
             for (var x in json.data.children) {
                 var child = json.data.children[x].data;
                 var title = child.title;
