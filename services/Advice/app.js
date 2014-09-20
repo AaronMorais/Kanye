@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var request = require('request');
+var kanye = require("../../");
 
 var adviceArray = ["I am God's vessel. But my greatest pain in life is that I will never be able to see myself perform live.",
 "Would you believe in what you believe in if you were the only one who believed it?"];
@@ -24,11 +24,8 @@ app.get('/sms', function(req, res) {
 	}
 	
     var message = getAdvice();
-	request("http://localhost:80/sendsms?message=" +
-			message +
-			"&number=" +
-			encodeURIComponent(req.query.number));
-	res.status(200).end()
+	kanye.sendMessage(req.query.number, message);
+	res.status(200).end();
 });
 
 app.listen(3000);

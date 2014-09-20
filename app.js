@@ -12,7 +12,7 @@ var SERVICES = {
     advice: "http://127.0.0.1:3000",
     hn: "http://127.0.0.1:3001",
     wolfram: "http://127.0.01:4000",
-    test: "http://127.0.0.1",
+    reddit: "http://127.0.0.1:3002",
     getServiceFromMessage: function(message) {
         return this[message.toLowerCase().split(/\s+/)[0]];
     }
@@ -88,7 +88,6 @@ app.get('/sendsms', function(req, res) {
 
 app.listen(80);
 
-
 module.exports = {
     sendMessage: function(number, message) {
         request("http://localhost:80/sendsms?message=" +
@@ -96,4 +95,4 @@ module.exports = {
             "&number=" +
             encodeURIComponent(number));
     }
-}
+};
