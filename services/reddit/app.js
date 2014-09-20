@@ -6,6 +6,9 @@ var request = require("request");
 
 var STATE = {
     getState: function(number) {
+        if (!this[number]) {
+            this[number] = {};
+        }
         return this[number];
     }
 };
@@ -96,7 +99,7 @@ app.get('/sms', function(req, res) {
     if (message.trim().toLowerCase() == "more" ||
             message.trim().toLowerCase() == "next") {
         var state = STATE.getState(number);
-        if (!state) {
+        if (!state.page) {
             res.status(400).end();
             return;
         }
@@ -105,7 +108,6 @@ app.get('/sms', function(req, res) {
 
         return;
     }
-
 
     // We should only get here if we couldnt handle the message
     res.status(400).end();
