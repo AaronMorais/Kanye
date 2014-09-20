@@ -17,6 +17,7 @@ app.get('/sms', function(req, res) {
         var num = parseInt(message);
         request("http://reddit.com/top.json?limit=5",
             function(error, response, body) {
+                console.log("Here");
                 var json = JSON.parse(body);
 
                 var child = json.data.children[num-1];

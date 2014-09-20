@@ -79,6 +79,7 @@ app.get('/sendsms', function(req, res) {
     var media = req.query.media;
 
     if (media) {
+        console.log("SENT MMS");
         twilio.sendMessage({
             to: number,
             from: config.PHONE_NUMBER,
