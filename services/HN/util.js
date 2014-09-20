@@ -9,15 +9,8 @@ var isValidCommand = function(command) {
       return false;
     }
   }
-
-  // Handle a number
   if (typeof command === "number") {
-    var index = parseInt(command);
-    if (index <= 5 && index >= 1) {
-      return true;
-    } else {
-      return false;
-    }
+    return true;
   }
   return false;
 };

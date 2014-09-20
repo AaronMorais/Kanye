@@ -3,7 +3,8 @@ var request = require("request");
 var app = require("express")();
 
 var scraper = require("./scraper");
-var kanye = require("../../kanye");
+var USER_STATE = require("./constants").USER_STATE;
+var USER_STATE_INCLUDE = false;
 
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
@@ -35,25 +36,59 @@ var handleMessage = function(req, res) {
   var message = req.query.message;
 
   // Invalid data set from main server
-  if (!message || !number) {
+  if (!isValidCommand(message)) {
     res.status(400).end();
     return;
   }
 
-  if (activeUsers.indexOf(number) === -1) {
-    activeUsers[number] = new State();
-  }
-
-  scraper.scrapeHN(message, number, activeUsers[number], function(reply, error) {
-    // TODO: Handle error properly through the state
-    if (error) {
+  if (message === "hn" || message === "more") {
+    if (activeUsers.indexOf(number) === -1 || message === "hn") {
+      // First time using hn or restarting the state
+      activeUsers[number] = new State();
+    } else if (activeUsers[number].getUserState() === USER_STATE.READING
+        && message === "more") {
+      // Wants to read more
+      var text = state.getReadingBlock();
+      res.send({message: text, number: number});
+    }
+    var state = activeUsers[number];
+    if (state.isBusy() && USER_STATE_INCLUDE) {
       res.status(400).end();
     }
 
-    var result = message + "\n" + messageHelp;
-    kanye.sendMessage(result, number);
-    res.status(200).end();
-  });
+    state.setUserState(USER_STATE.PENDING);
+    scraper.scrapeHN(message, number, activeUsers[number], function(reply, error) {
+      state.setUserState(USER_STATE.LIST);
+      // TODO: Handle error properly through the state
+      if (error) {
+        res.status(400).end();
+      }
+
+      var result = message + "\n" + messageHelp;
+      res.status(200).json({message: result, number: number});
+    });
+
+  } else if (!isNaN(message)) {
+    // the message is a number
+    var index = parseInt(message)-1;
+    var url = state.getArticleLink(index);
+    if (!url) {
+      res.status(400).end();
+    }
+
+    state.setUserState(USER_STATE.PENDING);
+    scraper.scrapeArticle(url, state, function(text, error) {
+      state.setUserState(USER_STATE.READING);
+      // TODO: Handle error properly through the state
+      if (error) {
+        console.log(error);
+        res.status(400).end();
+      }
+      res.status(200).json({message: text, number: number});
+    });
+  }
+
+  res.status(400).end();
 };
 
 app.get(messageEndpoint, handleMessage);

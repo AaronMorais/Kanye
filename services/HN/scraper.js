@@ -1,5 +1,6 @@
 var jsdom = require("jsdom");
 var article = require("article");
+var request = require("request");
 var State = require("./state");
 var util = require("./util");
 var constants = require("./constants");
@@ -25,23 +26,25 @@ var scrapeHN = function(message, number, state, callback) {
         };
       });
       state.setContentState(articleInfo);
-
       var reply = state.getArticleList();
 
-
-      //callback(reply.join("\n"));
       callback(reply);
     }
   });
 };
 
-var scrapeArticle = function(url, callback) {
+var scrapeArticle = function(url, state, callback) {
+  console.log(url);
   request(url).pipe(article(url, function(err, result) {
     if (err) {
-      console.log("Wasn't able to get contents of" + url);
+      console.log(err);
+      console.log("Wasn't able to get contents of " + url);
+      callback(null, "Wasn't able to get the contents of " + url);
       return;
     }
-    callback(result.text, result.title);
+    state.setReadingText(result.text);
+    var articleBlock = state.getReadingBlock();
+    callback(articleBlock);
   }));
 };
 

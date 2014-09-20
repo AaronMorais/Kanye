@@ -1,13 +1,16 @@
 /**
  * State class to handle where the user is in Hacker News
  */
-var maxTextLength = 155;
-var pageLength = 40;
+var USER_STATE = require("./constants").USER_STATE;
+var maxTextLength = 1555;
+var pageLength = 30;
 
 var State = function() {
   this.currentArticle = 0;
   this.numSend = 5;
   this.contentState = {};
+  this.articleText = null;
+  this.userState = USER_STATE.LIST;
 };
 
 State.prototype.getArticleIndex = function() {
@@ -21,6 +24,14 @@ State.prototype.getPageNum = function() {
 State.prototype.setContentState = function(state) {
   this.contentState = state;
 };
+
+State.prototype.setUserState = function(state) {
+  this.userState = state;
+}
+
+State.prototype.setReadingText = function(text) {
+  this.articleText = text;
+}
 
 State.prototype.getArticleList = function() {
   var totalLength = 0;
@@ -42,5 +53,40 @@ State.prototype.getArticleList = function() {
   this.currentArticle += titles.length;
   return titles.join("\n");
 };
+
+/**
+ * Returns a chunk of the article text and then slices
+ * the old one
+ */
+State.prototype.getReadingBlock = function() {
+  var text = this.articleText;
+  console.log("TEXTEXT", text.length);
+  var start = text.length > maxTextLength ? maxTextLength-1 : text.length-1;
+  for (var i=start; i>start-20; i--) {
+    // Check for punctuation points
+    if (text[i].match(/[\s\,\.\;\:]/g)) {
+      break;
+    }
+  }
+  var reply = text.slice(0, i);
+  console.log("asdasdasd\n\n\n");
+  console.log(this.articleText);
+  console.log("\n\nIN THE MIDDLE\n\n");
+  this.articleText = text.slice(i);
+  console.log(this.articleText);
+  console.log("\n\n\nasdasdasd");
+  return reply;
+};
+
+State.prototype.getArticleLink = function(index) {
+  if (index >= this.contentState.length || index < 0) {
+    return null;
+  }
+  return this.contentState[index].href;
+};
+
+State.prototype.isBusy = function() {
+  return this.userState === USER_STATE.PENDING;
+}
 
 module.exports = State;

@@ -20,12 +20,21 @@ var printObject = function(data) {
 }
 
 var state = new State();
+
 scraper.scrapeHN("hn", 123456, state, function(reply, error) {
   if (error) {
     console.log(error);
     return;
   }
   console.log(reply);
+  var url = state.getArticleLink(1);
+  scraper.scrapeArticle(url, state, function(text, error) {
+    console.log(text);
+    console.log("ASDASDASDASDASD");
+    scraper.scrapeArticle(url, state, function(text, error) {
+      console.log(text);
+    });
+  });
 });
 
 var getArticleContent = function(href) {
