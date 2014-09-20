@@ -39,6 +39,8 @@ var isServiceStateless = function(service) {
 
 // Global variable keeps track of the last service that was used by a number.
 var g_lastService = {};
+// Global variable tracks if a number is waiting for a response.
+var g_isWaiting = {};
 
 // The front-end stuff originates from here
 app.get('/', function(req, res) {
@@ -110,6 +112,13 @@ app.get('/sms', function(req, res) {
   var message     = req.query.Body;
   var lastService = g_lastService[number];
 
+  if (g_isWaiting[number]) {
+    var waitingErrorMessage = 'Sorry, I\'m really busy right now. Hit me up later.';
+    kanye.sendMessage(number, waitingErrorMessage);
+    return;
+  }
+  g_isWaiting[number] = true;
+
   var service;
 
   if (SERVICES.getServiceFromMessage(message)) {
@@ -136,11 +145,13 @@ app.get('/sms', function(req, res) {
     console.log('Falling back to Wolfram Alpha service.');
   }
 
+
   // Route the request to the proper service.
   // The service should return a JSON object `{ message: ... }` which will contain text
   // to be sent to the user.
   request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
     function(error, response, body) {
+      g_isWaiting[number] = false;
       if (error || response.statusCode != 200) {
         // Don't fallback to wolfram alpha, it could've been the one that failed!
         // Send a 'try again later' instead.'
