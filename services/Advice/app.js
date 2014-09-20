@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var kanye = require("../../");
+var kanye = require("../../app");
 
 var adviceArray = ["I am God's vessel. But my greatest pain in life is that I will never be able to see myself perform live.",
 "Would you believe in what you believe in if you were the only one who believed it?"];
