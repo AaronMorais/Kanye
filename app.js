@@ -45,15 +45,29 @@ app.get('/sms', function(req, res) {
         service = state;
     } else {
         service = SERVICES.wolfram;
+        console.log("WOLFRAM SERVICE BY DEFAULT");
 
-        // TODO remove when wolfram is implemented
+        // TODO remove when wolfram service is implemented
         res.status(404).end();
         return;
     }
 
     // Now we know which service we should notify
     // lets build a request and notify it
-    request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number));
+    request(service + "/sms?message=" + message + "&number=" +
+        encodeURIComponent(number), function(error, response, body) {
+            if (error || response.statusCode != 200) {
+                // This service didn't handle us properly
+                // Let's just fallback to wolfram
+                // TODO do when wolfram service is implemented
+                service = SERVICES.wolfram;
+                console.log("WOLFRAM SERVICE FROM ERR");
+
+                // TODO remove when wolfram service is implemented
+                res.status(404).end();
+                return;
+            }
+    });
 
     // OK everything went well, send 200 and end request
     res.status(200).end();
