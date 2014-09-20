@@ -56,4 +56,10 @@ app.get('/sms', function(req, res) {
     res.status(200).end();
 });
 
+app.get('/sendsms', function(req, res) {
+    console.log("HELLO");
+
+    res.status(200).end();
+});
+
 app.listen(80);
