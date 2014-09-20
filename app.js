@@ -56,11 +56,16 @@ app.get('/sms', function(req, res) {
     // lets build a request and notify it
     request(service + "/sms?message=" + message + "&number=" +
         encodeURIComponent(number), function(error, response, body) {
+            console.log("Recvd response from service");
             if (error || response.statusCode != 200) {
                 // This service didn't handle us properly
                 // Let's just fallback to wolfram
                 // TODO do when wolfram service is implemented
                 service = SERVICES.wolfram;
+                g_states[number] = service;
+                if (state) {
+                    request(state + "/clear?number=" + number);
+                }
                 console.log("WOLFRAM SERVICE FROM ERR");
 
                 // TODO remove when wolfram service is implemented
