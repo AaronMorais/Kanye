@@ -20,7 +20,7 @@ var printObject = function(data) {
 }
 
 var state = new State();
-scraper.handleScrape("hn", 123456, state, function(reply, error) {
+scraper.scrapeHN("hn", 123456, state, function(reply, error) {
   if (error) {
     console.log(error);
     return;

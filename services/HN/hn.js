@@ -44,7 +44,7 @@ var handleMessage = function(req, res) {
     activeUsers[number] = new State();
   }
 
-  handleScrape(message, number, activeUsers[number], function(reply, error) {
+  scraper.scrapeHN(message, number, activeUsers[number], function(reply, error) {
     // TODO: Handle error properly through the state
     if (error) {
       res.status(400).end();

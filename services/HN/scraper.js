@@ -1,9 +1,10 @@
 var jsdom = require("jsdom");
+var article = require("article");
 var State = require("./state");
 var util = require("./util");
 var constants = require("./constants");
 
-var handleScrape = function(message, number, state, callback) {
+var scrapeHN = function(message, number, state, callback) {
   if (!util.isValidCommand(message)) {
     callback(null, "Not a valid command");
     return;
@@ -34,6 +35,17 @@ var handleScrape = function(message, number, state, callback) {
   });
 };
 
+var scrapeArticle = function(url, callback) {
+  request(url).pipe(article(url, function(err, result) {
+    if (err) {
+      console.log("Wasn't able to get contents of" + url);
+      return;
+    }
+    callback(result.text, result.title);
+  }));
+};
+
 module.exports = {
-  handleScrape: handleScrape,
+  scrapeHN: scrapeHN,
+  scrapeArticle: scrapeArticle
 };
