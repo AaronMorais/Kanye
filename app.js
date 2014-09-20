@@ -65,7 +65,7 @@ app.get('/sms', function(req, res) {
                 console.log("WOLFRAM SERVICE FROM ERR");
 
                 request(service + "/sms?message=" + message + "&number=" +
-                    encodeURIComponent(number));
+                    encodeURIComponent(number), function(){});
             }
     });
 
