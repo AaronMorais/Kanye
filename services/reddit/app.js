@@ -38,6 +38,7 @@ app.get('/sms', function(req, res) {
                         media: url,
                         number: req.query.number
                     }));
+                    res.status(200).end();
                 } else {
                     request(url).pipe(article(url, function(err, result) {
                       if (err) {
@@ -47,11 +48,9 @@ app.get('/sms', function(req, res) {
                         }));
                         return;
                       }
-                      console.log(result);
                       console.log(result.text);
-                      // state.setReadingText(result.text);
-                      // var articleBlock = state.getReadingBlock();
-                      // callback(articleBlock);
+                      res.send(result.text.substring(0, 1500));
+                      res.status(200).end();
                     }));
                 }
         });
