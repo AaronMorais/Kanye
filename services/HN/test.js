@@ -1,5 +1,5 @@
 var scraper = require("./scraper");
-var State = require("./state");
+var State = require("./hnstate");
 var request = require("request");
 var article = require("article");
 

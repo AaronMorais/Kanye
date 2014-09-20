@@ -1,7 +1,7 @@
 var jsdom = require("jsdom");
 var article = require("article");
 var request = require("request");
-var State = require("./state");
+var State = require("./hnstate");
 var util = require("./util");
 var constants = require("./constants");
 

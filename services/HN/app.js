@@ -4,22 +4,17 @@ var app = require("express")();
 
 var scraper = require("./scraper");
 var USER_STATE = require("./constants").USER_STATE;
+var util = require("./util");
+var State = require("./hnstate");
 var USER_STATE_INCLUDE = false;
 
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
-var baseUrl = "http://localhost:80/";
 
 var messageHelp = "Yo hit me up with dem digits of what you want to read, or " +
                   "send me \"more\" to see more good shit";
 
 var activeUsers = {};
-
-var sendText = function(message, number) {
-  request(baseUrl + "sendsms?message=" + reply +
-    "&number=" + encodeURIComponent(number)
-  );
-};
 
 var handleClear = function(req, res) {
   var user = req.query.user;
@@ -36,13 +31,14 @@ var handleMessage = function(req, res) {
   var message = req.query.message;
 
   // Invalid data set from main server
-  if (!isValidCommand(message)) {
+  if (!util.isValidCommand(message)) {
+    console.log("Invalid command");
     res.status(400).end();
     return;
   }
 
   if (message === "hn" || message === "more") {
-    if (activeUsers.indexOf(number) === -1 || message === "hn") {
+    if (!activeUsers[number] || message === "hn") {
       // First time using hn or restarting the state
       activeUsers[number] = new State();
     } else if (activeUsers[number].getUserState() === USER_STATE.READING
@@ -62,10 +58,13 @@ var handleMessage = function(req, res) {
       // TODO: Handle error properly through the state
       if (error) {
         res.status(400).end();
+        return;
       }
 
-      var result = message + "\n" + messageHelp;
+      var result = reply + "\n" + messageHelp;
+      console.log(result);
       res.status(200).json({message: result, number: number});
+      return;
     });
 
   } else if (!isNaN(message)) {
@@ -84,6 +83,7 @@ var handleMessage = function(req, res) {
         console.log(error);
         res.status(400).end();
       }
+      console.log(text);
       res.status(200).json({message: text, number: number});
     });
   }

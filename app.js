@@ -8,6 +8,10 @@ var twilio = require('twilio')(config.ACCOUNT_SID, config.AUTH_TOKEN);
 
 // Start the express app
 var app = express();
+app.use(
+  express.static(__dirname + '/static')
+);
+
 var redisClient = redis.createClient();
 
 var KANYE_PORT = config.DEBUG ? 8000 : 80;
@@ -38,7 +42,7 @@ var g_lastService = {};
 
 // The front-end stuff originates from here
 app.get('/', function(req, res) {
-  res.send('Hello world!');
+  res.sendfile(__dirname + "/static/index.html");
 });
 
 /*

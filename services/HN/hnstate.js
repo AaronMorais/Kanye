@@ -29,6 +29,10 @@ State.prototype.setUserState = function(state) {
   this.userState = state;
 }
 
+State.prototype.getUserState = function(state) {
+  return this.userState;
+}
+
 State.prototype.setReadingText = function(text) {
   this.articleText = text;
 }
