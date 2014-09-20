@@ -30,7 +30,7 @@ var makeRedditRequest = function(page, number, res) {
             state.page = page;
 
             var response = "";
-            var num = 1;
+            var num = page + 1;
             json.data.children = json.data.children.splice(page, 5);
             console.log(json.data.children.length);
             for (var x in json.data.children) {
