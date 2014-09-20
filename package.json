@@ -1,13 +1,14 @@
 {
-  "name": "HackTheNorth",
-  "version": "0.0.0",
+  "name": "kanye",
+  "version": "0.0.1",
   "description": "Hacker News Module",
   "main": "hn.js",
   "scripts": {
     "test": "node hn.js"
   },
   "dependencies": {
-    "jsdom": "1.0.0-pre.7"
+    "jsdom": "1.0.0-pre.7",
+    "express": ""
   },
   "repository": {
     "type": "git",
