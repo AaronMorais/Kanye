@@ -4,6 +4,7 @@
 var USER_STATE = require("./constants").USER_STATE;
 var maxTextLength = 1555;
 var pageLength = 30;
+var pageIncr = 5;
 
 var State = function() {
   this.currentArticle = 0;
@@ -40,8 +41,8 @@ State.prototype.setReadingText = function(text) {
 State.prototype.getArticleList = function() {
   var totalLength = 0;
   var titles = [];
-  for (var i=this.currentArticle; i < pageLength; i++) {
-    var article = this.contentState[i];
+  for (var i=this.currentArticle; i < this.currentArticle+pageIncr; i++) {
+    var article = this.contentState[i % pageLength];
     var titleLength = article.title.length;
     // Make sure we don't go over the max
     if (titleLength + totalLength > maxTextLength) {
