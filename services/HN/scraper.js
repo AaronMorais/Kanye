@@ -34,10 +34,8 @@ var scrapeHN = function(message, number, state, callback) {
 };
 
 var scrapeArticle = function(url, state, callback) {
-  console.log(url);
   request(url).pipe(article(url, function(err, result) {
     if (err) {
-      console.log(err);
       console.log("Wasn't able to get contents of " + url);
       callback(null, "Wasn't able to get the contents of " + url);
       return;

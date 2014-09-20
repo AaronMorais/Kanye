@@ -60,7 +60,6 @@ State.prototype.getArticleList = function() {
  */
 State.prototype.getReadingBlock = function() {
   var text = this.articleText;
-  console.log("TEXTEXT", text.length);
   var start = text.length > maxTextLength ? maxTextLength-1 : text.length-1;
   for (var i=start; i>start-20; i--) {
     // Check for punctuation points
@@ -69,12 +68,7 @@ State.prototype.getReadingBlock = function() {
     }
   }
   var reply = text.slice(0, i);
-  console.log("asdasdasd\n\n\n");
-  console.log(this.articleText);
-  console.log("\n\nIN THE MIDDLE\n\n");
   this.articleText = text.slice(i);
-  console.log(this.articleText);
-  console.log("\n\n\nasdasdasd");
   return reply;
 };
 
