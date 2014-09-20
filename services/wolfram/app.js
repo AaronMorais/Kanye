@@ -27,7 +27,7 @@ var formatResult = function(result) {
 
       // Some title don't make sense to add. Filter them out there.
       var resultString = shouldFilterOutTitle(title) ? answer : title + ':\n' + answer;
-      resultString.replace("Wolfram|Alpha", "Kanye");
+      resultString = resultString.replace("Wolfram|Alpha", "Kanye");
       return resultString;
     }
   }
