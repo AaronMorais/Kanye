@@ -2,21 +2,25 @@
  * State class to handle where the user is in Hacker News
  */
 var State = function() {
-  this.currentPage = 0;
+  this.currentArticle = 0;
   this.numSend = 5;
 };
 
-State.prototype.incrementPage = function() {
-  this.currentPage += this.numSend;
-  return this.currentPage;
+State.prototype.incrementArticleIndex = function() {
+  this.currentArticle += this.numSend;
+  return this.currentArticle;
 };
 
-State.prototype.getPage = function() {
-  return this.currentPage;
+State.prototype.getArticleIndex = function() {
+  return this.currentArticle;
 };
 
 State.prototype.getNumSend = function() {
   return this.numSend;
+};
+
+State.prototype.getPageNum = function() {
+  return ((this.currentArticle+1) / 40) + 1;
 };
 
 module.exports = State;

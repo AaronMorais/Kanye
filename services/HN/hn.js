@@ -8,9 +8,41 @@ var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
 var baseUrl = "http://localhost:80/";
 
-var serviceUrl = "http://news.ycombinator.com/";
+var keywords = ["hn", "more"];
+var messageHelp = "Yo hit me up with dem digits of what you want to read, or " +
+                  "send me \"more\" to see more good shit";
+
+var serviceUrl = "http://news.ycombinator.com";
 var serviceScripts = ["http://code.jquery.com/jquery.js"];
 var activeUsers = {};
+
+var sendText = function(message, number) {
+  request(baseUrl + "sendsms?message=" + reply +
+    "&number=" + encodeURIComponent(number)
+  );
+};
+
+var isValidCommand = function(command) {
+  // Handle a string
+  if (typeof command === "string") {
+    if (command in keywords) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // Handle a number
+  if (typeof command === "number") {
+    var index = parseInt(command);
+    if (index <= 5 && index >= 1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
+};
 
 var handleClear = function(req, res) {
   var user = req.query.user;
@@ -33,46 +65,51 @@ var handleMessage = function(req, res) {
   }
 
   var response = handleScrape(message, number, function(reply) {
-    request(baseUrl + "sendsms?message=" + reply +
-			"&number=" + encodeURIComponent(number)
-    );
+    var result = message + "\n" + messageHelp;
+    sendText(result, number);
     res.status(200).end();
   });
 };
 
 var handleScrape = function(message, number, callback) {
+  if (!isValidCommand(message)) {
+    return res.status(400).status();
+  }
+
   if (!(number in activeUsers)) {
     activeUsers[number] = new State();
   }
 
   var state = activeUsers[number];
+
   jsdom.env({
-    url: serviceUrl,
+    url: serviceUrl + "/news?p=" + state.getPageNum(),
     scripts: serviceScripts,
     done: function (errors, window) {
       var $ = window.$;
       var articles = $("td.title:not(:last) a");
+
       // Grab 5 pages and increment counter
       var elements = articles.slice(
-        state.getPage(),
-        state.getPage()+state.getNumSend()
+        state.getArticleIndex(),
+        state.getArticleIndex()+state.getNumSend()
       );
-      state.incrementPage();
+      state.incrementArticleIndex();
 
       // Get only the text
       var reply = $.map(elements, function(elem) {
         return $(elem).text();
       });
+
+      // Append the index to the front
+      for (var i=0; i<reply.length; i++) {
+        reply[i] = (i+1).toString() + ". " + reply[i];
+      }
+
       callback(reply.join("\n"));
     }
   });
 };
-/* For testing purposes
-handleMessage("lol", "123456", function(reply) {
-  for (var i=0; i<reply.length; i++) {
-    console.log(reply[i]);
-  }
-});*/
 
 app.get(messageEndpoint, handleMessage);
 app.get(clearEndpoint, handleClear);
