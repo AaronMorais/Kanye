@@ -89,7 +89,7 @@ app.get('/sendsms', function(req, res) {
         twilio.sendMessage({
             to: number,
             from: config.PHONE_NUMBER,
-            body: message
+            body: unescape(message)
         });
     }
 
