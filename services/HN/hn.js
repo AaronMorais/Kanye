@@ -48,7 +48,7 @@ var handleClear = function(req, res) {
   var user = req.query.user;
   // If no user was given or it doesn't exist in active users
   if (!user || (user && !(user in activeUsers))) {
-    res.send(400);
+    res.status(400).end();
   }
   delete activeUsers[user];
   res.status(200).end();
