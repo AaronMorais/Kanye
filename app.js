@@ -56,7 +56,6 @@ app.get('/sms', function(req, res) {
     // lets build a request and notify it
     request(service + "/sms?message=" + message + "&number=" +
         encodeURIComponent(number), function(error, response, body) {
-            console.log("Recvd response from service");
             if (error || response.statusCode != 200) {
                 // This service didn't handle us properly
                 // Let's just fallback to wolfram

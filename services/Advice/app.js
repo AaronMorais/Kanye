@@ -20,6 +20,7 @@ function getAdvice() {
 app.get('/sms', function(req, res) {
 	if (req.query.message.toLowerCase() != "advice") {
 		res.status(400).end();
+        return;
 	}
 	
     var message = getAdvice();
