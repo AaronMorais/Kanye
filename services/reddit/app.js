@@ -36,7 +36,7 @@ var makeRedditRequest = function(page, number, res) {
             for (var x in json.data.children) {
                 var child = json.data.children[x].data;
                 var title = child.title;
-                response += (num++) + ".) " + title + "\n";
+                response += (num++) + ") " + title + "\n";
             }
 
             console.log(response);
