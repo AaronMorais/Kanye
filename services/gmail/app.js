@@ -152,11 +152,11 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 };
 
 var handleSendMessage = function(req, res, message, oauthClient) {
-
+  var email = "From: HELLO@HELLO.com\nTo:" + message.to + "\nBody:" + message.body;
   var request = gmail.users.messages.send({
-    userId : message.to,
+    userId : 'me',
     message : {
-      raw : btoa(message.body)
+      raw : btoa(email)
     },
     auth : oauthClient,
   }, function(err, response) {
