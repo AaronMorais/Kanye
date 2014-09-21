@@ -18,7 +18,8 @@
     "hiredis": "",
     "cookie-session": "",
     "cookies": "",
-    "debug": ""
+    "debug": "",
+    "async": ""
   },
   "repository": {
     "type": "git",
