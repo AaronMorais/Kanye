@@ -187,7 +187,7 @@ app.get('/sms', function(req, res) {
         var errorMessage = 'Sorry, I\'m really busy right now. Hit me up later.';
         kanye.sendMessage(number, errorMessage);
       } else {
-        kanye.serviceRequest(service, message, number, function(error, response, body) {
+        kanye.serviceRequest(SERVICES.wolfram, message, number, function(error, response, body) {
           sendBodyResult(number, body, res, isLocalTest);
         });
       }
