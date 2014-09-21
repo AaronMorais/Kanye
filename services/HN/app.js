@@ -38,7 +38,7 @@ var handleMessage = function(req, res) {
   }
 
   if (message.toLowerCase() === "hn" || message.toLowerCase() === "more") {
-    if (!activeUsers[number] || message === "hn") {
+    if (!activeUsers[number] || message.toLowerCase() === "hn") {
       // First time using hn or restarting the state
       activeUsers[number] = new State();
 
