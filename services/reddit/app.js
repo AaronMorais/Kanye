@@ -74,8 +74,13 @@ app.get('/sms', function(req, res) {
                     });
                     res.status(200).end();
                 } else if (isImgur(url)) {
+                    if (url.startsWith('http://')) {
+                        url = 'http://i.' + url.substring(7) + ".jpg";
+                    } else if (url.startsWith('https://')) {
+                        url = 'https://i.' + url.substring(8) + ".jpg";
+                    }
                     res.json({
-                        media: "i." + url + ".jpg",
+                        media: url,
                         message: child.title,
                         number: number
                     });
