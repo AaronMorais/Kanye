@@ -211,7 +211,7 @@ app.get('/sms', function(req, res) {
         // They want to send a message. Parse the string, ensure its valid, then try to send.
         var messageParts = message.split(/\s+/);
 
-        if (messageParts.length >= 3 && messageParts[0] === 'compose' &&
+        if (messageParts.length >= 3 &&
             kanye.isValidEmail(messageParts[1])) {
           var message = {
             to: messageParts[1],
