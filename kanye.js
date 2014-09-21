@@ -1,19 +1,27 @@
 var request = require("request");
 
 module.exports = {
-
-    sendMessage: function(number, message, media) {
-        if (media) {
-            console.log("Got sendMessage with MMS");
-            request("http://localhost/sendsms?media=" +
-                media +
-                "&number=" +
-                encodeURIComponent(number) + "&message=" + message);
-        } else {
-            request("http://localhost/sendsms?message=" +
-                message +
-                "&number=" +
-                encodeURIComponent(number));
+  serviceRequest: function(service, message, number, callback) {
+    // Route the request to the proper service.
+    // The service should return a JSON object `{ message: ... }` which will contain text
+    // to be sent to the user.
+    request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
+      function(error, response, body) {
+        callback(error, response, body);
+    });
+  },
+  sendMessage: function(number, message, media) {
+    if (media) {
+      console.log("Got sendMessage with MMS");
+      request("http://localhost/sendsms?media=" +
+          media +
+          "&number=" +
+          encodeURIComponent(number) + "&message=" + message);
+    } else {
+      request("http://localhost/sendsms?message=" +
+          message +
+          "&number=" +
+          encodeURIComponent(number));
     }
   },
   normalizeNumber: function(number) {
