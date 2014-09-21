@@ -79,6 +79,7 @@ app.get('/sms', function(req, res) {
                         message: child.title,
                         number: number
                     });
+                    res.status(200).end();
                 } else {
                     request(url).pipe(article(url, function(err, result) {
                         if (err || result.text.length <= child.title) {
