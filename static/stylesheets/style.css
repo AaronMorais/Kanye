@@ -1,3 +1,34 @@
 body {
-  background-color: #123456;
+  background-color: #000000;
+  height: 100%;
+  width: 100%;
+}
+
+.jumbotron {
+  background-color: #000000;
+}
+
+.container {
+  display: block;
+  color: #eee;
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+#phone-preview {
+  width: 100%;
+}
+
+#kanye-photo {
+  width: 100%;
+}
+
+.main-content ul li {
+  font-size: 20px;
+}
+
+div.input-group {
+  float: left;
+  margin-right: 5px;
 }

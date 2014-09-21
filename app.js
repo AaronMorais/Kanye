@@ -82,6 +82,7 @@ app.get('/test', function(req, res) {
 
 app.get('/gmail', function(req, res) {
   var userNumber = req.query.number;
+  console.log(userNumber);
 
   request({ url: SERVICES.inbox + '/auth_url', qs: { number: userNumber } },
     function(error, response, body) {

@@ -1,9 +1,42 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="stylesheet" type="text/css" href="stylesheets/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
   </head>
   <body>
-    Hello World! It's Kanye Bitch!
+    <div class="jumbotron">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-3">
+            <img id="phone-preview" src="./img/nexus_5.png" />
+          </div>
+
+          <div class="col-md-5 main-content">
+            <h1 style="text-decoration: line-through">Get Siri</h1>
+            <h1>F*ck Siri, Get Kanye</h1>
+            <h3>We offer:</h3>
+            <ul>
+              <li>Email Access OFFLINE</li>
+              <li>Reddit</li>
+              <li>Hacker News</li>
+              <li>Wolfram Alpha</li>
+              <li>Dope Advice from Kanye himself</li>
+            </ul>
+            <h3>Be cool. Sign up for this dope sh*t.</h3>
+            <form action="/gmail" method="post" name="phone-input">
+              <div class="input-group">
+                <input type="text" name="number" class="form-control"
+                  placeholder="Your Phone Number" />
+              </div>
+              <input type="submit" class="btn btn-primary" value="Submit!"/>
+            </form>
+          </div>
+          <div class="col-md-4">
+            <img id="kanye-photo" src="../img/background.png" />
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
