@@ -75,6 +75,24 @@ app.get('/test', function(req, res) {
     });
 });
 
+app.get('/frontpage_test', function(req, res) {
+  var testParams = {
+    From: '+5555555555',
+    Body: req.query.m,
+    Test: true,
+  };
+
+  request({ url: 'http://localhost:' + KANYE_PORT + '/sms', qs: testParams },
+    function(error, response, body) {
+      if (error) {
+        res.status(500).send('Test failed to send. ' + error);
+        return;
+      }
+
+      res.status(200).json({ message: body });
+    });
+});
+
 /*
   // **** START GMAIL AUTHORIZATION CODE ****
   This endpoint handles authentication with GMail.

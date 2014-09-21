@@ -3,19 +3,30 @@
   <head>
     <link rel="stylesheet" type="text/css" href="stylesheets/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="javascript/index.js"></script>
   </head>
   <body>
     <div class="jumbotron">
       <div class="container">
         <div class="row">
           <div class="col-md-3">
-            <img id="phone-preview" src="./img/nexus_5.png" />
+            <div class="phone-skin">
+              <div class="phone-skin-screen">
+                <div class="chats">
+                </div>
+
+                <input type="text" id="message" class="form-control" />
+                <input type="submit" id="send" class="btn btn-primary" value="Send" />
+
+              </div>
+            </div>
           </div>
 
           <div class="col-md-6 main-content">
             <h1>Get Kanye</h1>
             <p>Kanye is the freshest virtual assistant. He's like Siri that uses text to communicate instead of voice, and doesn't require WiFi or a data plan.</p>
-            <p>Text "<strong>advice</strong>" to (222) 212 - 2313. Kanye is standing by.</p>
+            <p>Text "<strong>advice</strong>" to <strong>(222) 212 - 2313</strong>. Kanye is standing by.</p>
             <h3>We offer:</h3>
             <ul>
               <li>Access your email offline (register below)</li>
