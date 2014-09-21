@@ -154,10 +154,11 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 var handleSendMessage = function(req, res, message, oauthClient) {
 
   var request = gmail.users.messages.send({
-    'userId' : message.to,
-    'message' : {
-      'raw' : btoa(message.body)
+    userId : message.to,
+    message : {
+      raw : btoa(message.body)
     }
+    auth : oauthClient,
   }, function(err, response) {
     var outgoingMessage;
     if (err) {
