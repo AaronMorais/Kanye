@@ -110,7 +110,7 @@ app.get('/oauth2callback', function(req, res) {
 
 // **** END GMAIL AUTHORIZATION CODE ****
 
-var sendBodyResult = function(number, body, res) {
+var sendBodyResult = function(number, body, res, isLocalTest) {
   var bodyJSON = body ? JSON.parse( body ) : {};
   var outgoingMessage = bodyJSON.message;
   var outgoingMedia   = bodyJSON.media;
@@ -188,12 +188,12 @@ app.get('/sms', function(req, res) {
         kanye.sendMessage(number, errorMessage);
       } else {
         kanye.serviceRequest(service, message, number, function(error, response, body) {
-          sendBodyResult(number, body, res);
+          sendBodyResult(number, body, res, isLocalTest);
         });
       }
       return;
     }
-    sendBodyResult(number, body, res);
+    sendBodyResult(number, body, res, isLocalTest);
   });
 });
 
