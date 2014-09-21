@@ -248,11 +248,26 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 };
 
 var handleSendMessage = function(req, res, message, oauthClient) {
-  var email = "From: morais.aaron@gmail.com\r\nTo:" + message.to + "\r\nSubject: Test\r\n\r\n" + message.body;
+  var email_lines = [];
+
+  email_lines.push("From: \"Some Name Here\" <rootyadaim@gmail.com>");
+  email_lines.push("To: kevin@kevinbedi.com");
+  email_lines.push('Content-type: text/html;charset=iso-8859-1');
+  email_lines.push('MIME-Version: 1.0');
+  email_lines.push("Subject: New future subject here");
+  email_lines.push("");
+  email_lines.push("And the body text goes here");
+  email_lines.push("<b>And the bold text goes here</b>");
+
+  var email = email_lines.join("\r\n").trim();
+
+  var base64EncodedEmail = new Buffer(email).toString('base64');
+  base64EncodedEmail = base64EncodedEmail.replace(/\+/g, '-').replace(/\//g, '_');
+
   var request = gmail.users.messages.send({
     userId : 'me',
     message : {
-      raw : btoa(email)
+      raw : base64EncodedEmail
     },
     auth : oauthClient,
   }, function(err, response) {
