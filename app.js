@@ -110,7 +110,30 @@ app.get('/oauth2callback', function(req, res) {
 
 // **** END GMAIL AUTHORIZATION CODE ****
 
+var sendBodyResult = function(number, body, res) {
+  var bodyJSON = body ? JSON.parse( body ) : {};
+  var outgoingMessage = bodyJSON.message;
+  var outgoingMedia   = bodyJSON.media;
+  var outgoingError   = bodyJSON.error;
 
+  if (outgoingError) {
+    if (isLocalTest) {
+      res.status(200).send(outgoingError);
+    } else {
+      kanye.sendMessage(number, outgoingError);
+    }
+    return;
+  }
+
+  // Instead of sending a test message, inline the result directly to webpage.
+  if (isLocalTest) {
+    res.status(200).send(outgoingMessage);
+  } else {
+    // Send the outgoing message back to the user
+    kanye.sendMessage(number, outgoingMessage, outgoingMedia);
+    res.status(200).end();
+  }
+}
 
 // Twilio will ping this when we receieve an SMS
 app.get('/sms', function(req, res) {
@@ -156,50 +179,21 @@ app.get('/sms', function(req, res) {
     console.log('Falling back to Wolfram Alpha service.');
   }
 
-
-  // Route the request to the proper service.
-  // The service should return a JSON object `{ message: ... }` which will contain text
-  // to be sent to the user.
-  request(service + "/sms?message=" + message + "&number=" + encodeURIComponent(number),
-    function(error, response, body) {
-      g_isWaiting[number] = false;
-      if (error || response.statusCode != 200) {
-        // Don't fallback to wolfram alpha, it could've been the one that failed!
-        // Send a 'try again later' instead.'
+  kanye.serviceRequest(function(error, response, body) {
+    g_isWaiting[number] = false;
+    if (error || response.statusCode != 200) {
+      // Send a 'try again later' message.'
+      if (service === SERVICES.wolfram) {
         var errorMessage = 'Sorry, I\'m really busy right now. Hit me up later.';
-        // Sometimes the service can tell us exactly what went wrong.
-        if (typeof(body) === 'object' && object.error) {
-          errorMessage = object.error;
-        }
-
         kanye.sendMessage(number, errorMessage);
-        console.error('Service %s failed due to %s', service, error);
-        return;
-      }
-
-      var bodyJSON = body ? JSON.parse( body ) : {};
-      var outgoingMessage = bodyJSON.message;
-      var outgoingMedia   = bodyJSON.media;
-      var outgoingError   = bodyJSON.error;
-
-      if (outgoingError) {
-        if (isLocalTest) {
-          res.status(200).send(outgoingError);
-        } else {
-          kanye.sendMessage(number, outgoingError);
-        }
-        return;
-      }
-
-      // Instead of sending a test message, inline the result directly to webpage.
-      if (isLocalTest) {
-        res.status(200).send(outgoingMessage);
       } else {
-        // Send the outgoing message back to the user
-        kanye.sendMessage(number, outgoingMessage, outgoingMedia);
-        res.status(200).end();
+        kanye.serviceRequest(function(error, response, body) {
+          sendBodyResult(number, body, res);
+        });
       }
-    });
+      return;
+    }
+    sendBodyResult(number, body, res);
   });
 
 app.get('/sendsms', function(req, res) {
