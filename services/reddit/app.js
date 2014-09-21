@@ -20,6 +20,10 @@ var isImage = function(url) {
             url.indexOf("png") != -1;
 };
 
+var isImgur = function(url) {
+    return url.indexOf("imgur");
+}
+
 var makeRedditRequest = function(page, number, res) {
     console.log("reddit request from " + page);
     request("http://reddit.com/top.json?limit=100",
@@ -32,14 +36,12 @@ var makeRedditRequest = function(page, number, res) {
             var response = "";
             var num = page + 1;
             json.data.children = json.data.children.splice(page, 5);
-            console.log(json.data.children.length);
             for (var x in json.data.children) {
                 var child = json.data.children[x].data;
                 var title = child.title;
                 response += (num++) + ") " + title + "\n";
             }
 
-            console.log(response);
             res.send(JSON.stringify({
                 message: response,
                 number: number
@@ -65,12 +67,18 @@ app.get('/sms', function(req, res) {
                 var url = child.url;
 
                 if (isImage(url)) {
-                    res.send(JSON.stringify({
+                    res.json({
                         media: url,
                         message: child.title,
                         number: number
-                    }));
+                    });
                     res.status(200).end();
+                } else if (isImgur(url)) {
+                    res.json({
+                        media: "i." + url + ".jpg",
+                        message: child.title,
+                        number: number
+                    });
                 } else {
                     request(url).pipe(article(url, function(err, result) {
                         if (err || result.text.length <= child.title) {
