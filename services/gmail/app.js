@@ -157,7 +157,7 @@ var handleSendMessage = function(req, res, message, oauthClient) {
     userId : message.to,
     message : {
       raw : btoa(message.body)
-    }
+    },
     auth : oauthClient,
   }, function(err, response) {
     var outgoingMessage;
