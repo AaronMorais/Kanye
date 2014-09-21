@@ -19,7 +19,8 @@
     "cookie-session": "",
     "cookies": "",
     "debug": "",
-    "async": ""
+    "async": "",
+    "btoa": ""
   },
   "repository": {
     "type": "git",

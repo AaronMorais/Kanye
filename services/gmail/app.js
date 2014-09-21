@@ -6,6 +6,7 @@ var redis         = require('redis');
 var async         = require('async');
 var GmailState    = require('./gmailstate.js');
 var article       = require('article');
+var btoa          = require('btoa');
 var gmail         = google.gmail('v1');
 var OAuth2Client  = google.auth.OAuth2;
 var app           = express();
