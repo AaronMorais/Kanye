@@ -21,7 +21,7 @@ var CLIENT_ID     = config.DEBUG ? '846757558374-sjiu9cn3199qm24er1ludek0591lgj1
 var CLIENT_SECRET = config.DEBUG ? '3q24Spyav4M5sO_7-xMcEuGf'
                                  : 'Cma4ab55ISAwIaXjBu24A94x';
 var REDIRECT_URL  = config.DEBUG ? 'http://localhost:8000/oauth2callback'
-                                 : 'http://www.getkanye.com/oauth2callback';
+                                 : 'http://getkanye.com/oauth2callback';
 
 var redisTokenKey = function(userNumber) {
   return kanye.normalizeNumber(userNumber) + '_' + 'tokens';
@@ -106,13 +106,14 @@ var handleInbox = function(req, res, oauthClient) {
                 // Find the body of the message - it will be "attached" to the email
                 // It's possible that the email is composed of multiple parts. In that case
                 // just get the first part.
-
-                console.log(emailMessage.payload);
-                var messageHtml = (new Buffer(emailMessage.payload.body.data, 'base64').toString('ascii'));
+                var messageHtml;
+                if (emailMessage.payload.body.data) {
+                  messageHtml = (new Buffer(emailMessage.payload.body.data, 'base64').toString('ascii'));
+                } else {
+                  messageHtml = (new Buffer(emailMessage.payload.parts[0].body.data, 'base64').toString('ascii'));
+                }
 
                 article(messageHtml, function(err, result) {
-                  console.log(err);
-
                   if (err) callback(err);
 
                   console.log(result);
