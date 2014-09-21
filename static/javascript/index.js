@@ -7,7 +7,7 @@ $(document).ready(function() {
       data: { m: message },
       dataType: 'json',
       success: function(response) {
-        $('<div class="message"></div>').text(response.message).appendTo($('.chats'));
+        $('<pre class="message"></pre>').text(response.message).appendTo($('.chats'));
       }
     });
     $('#message').val('');
