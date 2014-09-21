@@ -21,7 +21,7 @@ var scrapeHN = function(message, number, state, callback) {
       // Get only the text
       var articleInfo = $.map(articles, function(elem, i) {
         return {
-          title: (i+1).toString() +":" + $(elem).text(),
+          title: (i+1).toString() +") " + $(elem).text(),
           href: $(elem).attr("href"),
         };
       });
