@@ -203,11 +203,11 @@ app.get('/sms', function(req, res) {
 
       oauthClient.setCredentials(credentials);
 
-      if (message === 'inbox') {
+      if (message.toLowerCase() === 'inbox') {
         handleInbox(req, res, oauthClient);
       } else if (kanye.isNumber(message)) {
         handleReadMessage(req, res, parseInt(message, 10), oauthClient);
-      } else if (message && message.substring(0,7) === 'compose') {
+      } else if (message && message.substring(0,7).toLowerCase() === 'compose') {
         // They want to send a message. Parse the string, ensure its valid, then try to send.
         var messageParts = message.split(/\s+/);
 
