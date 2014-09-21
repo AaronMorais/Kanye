@@ -11,7 +11,7 @@ var USER_STATE_INCLUDE = false;
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
 
-var listMessageHelp = "Send me the article number you want to read or" +
+var listMessageHelp = "Send me the article number you want to read or " +
                   "send me \"more\" to see more articles";
 var articleMessageHelp = "Send me \"more\" to continue reading";
 
