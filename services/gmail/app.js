@@ -23,6 +23,7 @@ var CLIENT_SECRET = config.DEBUG ? '3q24Spyav4M5sO_7-xMcEuGf'
                                  : 'Cma4ab55ISAwIaXjBu24A94x';
 var REDIRECT_URL  = config.DEBUG ? 'http://localhost:8000/oauth2callback'
                                  : 'http://getkanye.com/oauth2callback';
+var MAX_EMAIL_COUNT = 5;
 
 var redisTokenKey = function(userNumber) {
   return kanye.normalizeNumber(userNumber) + '_' + 'tokens';
@@ -50,6 +51,7 @@ app.get('/get_tokens', function(req, res) {
 
   oauth2Client.getToken(req.query.code, function(err, tokens) {
     // Recall: redis only accepts string value. Be sure to parse JSON when reading.
+    console.log(tokens);
     redisClient.set(redisKey, JSON.stringify( tokens ), function() {
       console.log('-> Stored tokens in key', redisKey);
       res.status(200).end()
@@ -57,98 +59,184 @@ app.get('/get_tokens', function(req, res) {
   });
 });
 
-var handleInbox = function(req, res, oauthClient) {
-  // Setup the inbox state.
-  activeUsers[ req.query.number ] = new GmailState();
+// Creates a function that handles the work of retrieving details of
+// email message. The details of the image are then added to the state.
+var createMessageJob = function(messageId, oauthClient, phoneNumber) {
+  return function(callback) {
+    gmail.users.messages.get({ userId: 'me', id: messageId, auth: oauthClient },
+      function(err, response) {
+        if (err) return callback(err);
 
-  gmail.users.messages.list({
-    userId: 'me',
-    auth: oauthClient,
-    maxResults: 5
-  }, function(err, response) {
-    if (err) {
-      console.error('Retrieving messages error: %s');
-      console.error( err );
+        var emailMessageTitle;
+        var emailMessageBody;
+        var emailMessage = response;
 
-      res.status(403).json({ error: 'Failed to retrieve inbox. Sorry bruh!' });
-    } else {
+        // Find the subject line and contents of the email
+        for (var j = 0; j < emailMessage.payload.headers.length; j++) {
+          if (emailMessage.payload.headers[j].name === 'Subject') {
+            emailMessageTitle = emailMessage.payload.headers[j].value;
+            if (config.DEBUG) {
+              console.log('Found subject line: %s', emailMessageTitle);
+            }
+            break;
+          }
+        }
+        // Find the body of the message - it will be "attached" to the email
+        // It's possible that the email is composed of multiple parts. In that case
+        // just get the first part.
+        var messageHtml;
+        if (emailMessage.payload.body.data) {
+          messageHtml = (new Buffer(emailMessage.payload.body.data, 'base64').toString('ascii'));
+        } else {
+          messageHtml = (new Buffer(emailMessage.payload.parts[0].body.data, 'base64').toString('ascii'));
+        }
+
+        emailMessageBody = messageHtml;
+
+        // Add the email details to the state
+        var emailObject = {
+          subject: emailMessageTitle,
+          body: emailMessageBody
+        };
+        if (activeUsers[ phoneNumber ]) {
+          activeUsers[ phoneNumber ].addEmail(emailObject);
+        }
+
+        callback(null, emailObject);
+      });
+  };
+}
+
+var handleInbox = function(req, res, oauthClient, next) {
+  console.log('-> Gmail handleInbox()');
+
+  if (next && activeUsers[ req.query.number ]) {
+    // Show more inbox entries.
+    var currentState          = activeUsers[ req.query.number ];
+    currentState.currentMode  = 'inbox';
+    // Use the current state and add more results.
+    gmail.users.messages.list({
+      userId: 'me',
+      auth: oauthClient,
+      maxResults: MAX_EMAIL_COUNT,
+      pageToken: currentState.nextPageToken
+    }, function(err, response) {
+      // Setup the inbox state.
       var messages          = response.messages;
       var nextPageToken     = response.nextPageToken;
       var currentState      = activeUsers[ req.query.number ];
 
-      console.log('-> Retrieving %s message(s).', messages.length);
+      if (err) {
+        res.status(403).json({ error: 'Failed to retrieve inbox. Sorry bruh!' });
+        return;
+      }
 
-      // Record this in case they want to see more emails
       currentState.setNextPageToken( nextPageToken );
-
-      // API requests to get details on each of the messages
-      var getMessageJobs = [];
+      var messageJobs = [];
       for (var i = 0; i < messages.length; i++) {
         var messageId = messages[i].id;
-
-        getMessageJobs.push((function(messageId) {
-          console.log('-> Create job for message %s at %s', messageId, i);
-          return function(callback) {
-            gmail.users.messages.get({ userId: 'me', id: messageId, auth: oauthClient },
-              function(err, response) {
-                if (err) return callback(err);
-
-                var emailMessageTitle;
-                var emailMessageBody;
-                var emailMessage = response;
-
-                // Find the subject line and contents of the email
-                for (var j = 0; j < emailMessage.payload.headers.length; j++) {
-                  if (emailMessage.payload.headers[j].name === 'Subject') {
-                    emailMessageTitle = emailMessage.payload.headers[j].value;
-                    if (config.DEBUG) {
-                      console.log('Found subject line: %s', emailMessageTitle);
-                    }
-                    break;
-                  }
-                }
-                // Find the body of the message - it will be "attached" to the email
-                // It's possible that the email is composed of multiple parts. In that case
-                // just get the first part.
-                var messageHtml;
-                if (emailMessage.payload.body.data) {
-                  messageHtml = (new Buffer(emailMessage.payload.body.data, 'base64').toString('ascii'));
-                } else {
-                  messageHtml = (new Buffer(emailMessage.payload.parts[0].body.data, 'base64').toString('ascii'));
-                }
-
-                currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
-                callback(null, currentState);
-              });
-          };
-        })(messageId));
+        messageJobs.push( createMessageJob(messageId, oauthClient, req.query.number) );
       }
 
       if (messages.length === 0) {
-        res.status(403).json({ error: 'You have no emails in your inbox.' });
-      } else {
-        // Get the message contents for all messages in the inbox.
-        // Keep these stored, so if we read them later we dont do another API request.
-        console.log('-> Starting %s parallel jobs to retrieve messages.', getMessageJobs.length);
-        async.parallel(getMessageJobs, function(err, resultStates) {
-
-
-          if (err) {
-            res.status(500).json({ error: 'Failed to retrieve your emails.' });
-          } else {
-            // This should be filled out by this point. Build the message to send.
-            var outgoingMessage = currentState.buildInboxMessage();
-            res.status(200).json({
-              message: outgoingMessage
-            });
-          }
-        });
+        res.status(403).json({ error: 'You have no emails in your inbox' });
+        return;
       }
-    }
-  });
+
+      async.series(messageJobs, function(err, resultStates) {
+        if (err) {
+          res.status(400).json({ error: 'Failed to retrieve email messages.' });
+          return;
+        }
+
+        var outgoingMessage = currentState.buildInboxMessage();
+        res.status(200).json({ message: outgoingMessage });
+      });
+
+    });
+  } else {
+    // The initial request to inbox goes here.
+    activeUsers[ req.query.number ] = new GmailState();
+    gmail.users.messages.list({
+      userId: 'me',
+      auth: oauthClient,
+      maxResults: MAX_EMAIL_COUNT
+    }, function(err, response) {
+      if (err) {
+        console.error('Retrieving messages error: %s');
+        console.error( err );
+
+        res.status(403).json({ error: 'Failed to retrieve inbox. Sorry bruh!' });
+      } else {
+        var messages          = response.messages;
+        var nextPageToken     = response.nextPageToken;
+        var currentState      = activeUsers[ req.query.number ];
+
+        console.log('-> Retrieving %s message(s).', messages.length);
+
+        // Record this in case they want to see more emails
+        currentState.setNextPageToken( nextPageToken );
+
+        // API requests to get details on each of the messages
+        var getMessageJobs = [];
+        for (var i = 0; i < messages.length; i++) {
+          var messageId = messages[i].id;
+          getMessageJobs.push( createMessageJob(messageId, oauthClient, req.query.number) );
+        }
+
+        if (messages.length === 0) {
+          res.status(403).json({ error: 'You have no emails in your inbox.' });
+        } else {
+          // Get the message contents for all messages in the inbox.
+          // Keep these stored, so if we read them later we dont do another API request.
+          console.log('-> Starting %s parallel jobs to retrieve messages.', getMessageJobs.length);
+          async.series(getMessageJobs, function(err, resultStates) {
+            if (err) {
+              res.status(500).json({ error: 'Failed to retrieve your emails.' });
+            } else {
+              // This should be filled out by this point. Build the message to send.
+              var outgoingMessage = currentState.buildInboxMessage();
+              res.status(200).json({
+                message: outgoingMessage
+              });
+            }
+          });
+        }
+      }
+    });
+  }
 };
 
 var handleReadMessage = function(req, res, messageIndex, oauthClient) {
+  console.log('-> Gmail reading message %s', messageIndex);
+
+  var textLimit    = 500;
+  var currentState = activeUsers[ req.query.number ];
+
+  if (currentState.currentMode === 'reading' && messageIndex != currentState.currentReadingMessageIndex) {
+    // Reading a new message, so set the cursor (text) back to 0th index
+    currentState.currentMessageIndex = 0;
+    console.log('-> Reset read message | old: %s | new: %s', messageIndex,
+      currentState.currentReadingMessageIndex);
+  }
+
+  // Subtract by 1 since we start at 1.
+  var emailMessage = currentState.getEmailAt( messageIndex - 1 );
+
+  var outgoingMessage = emailMessage.body.substring(currentState.currentMessageIndex, textLimit);
+  if (emailMessage.body.length > (currentState.currentMessageIndex + textLimit)) {
+    outgoingMessage += '\n Reply with `more` to continue reading. (shortcut is `m`)'
+  }
+  else if (currentState.currentMessageIndex > emailMessage.body.length) {
+    outgoingMessage = 'End of Email.';
+  }
+
+  currentState.currentReadingMessageIndex = messageIndex;
+  currentState.currentMessageIndex       += textLimit;
+  currentState.currentMode                = 'reading';
+  res.status(200).json({
+    message: outgoingMessage
+  });
 };
 
 var handleSendMessage = function(req, res, message, oauthClient) {
@@ -171,6 +259,18 @@ var handleSendMessage = function(req, res, message, oauthClient) {
       message: outgoingMessage
     });
   });
+};
+
+var handleMore = function(req, res, oauthClient) {
+  var currentState = activeUsers[ req.query.number ];
+  if (currentState.currentMode === 'reading') {
+    handleReadMessage(req, res, currentState.currentReadingMessageIndex, oauthClient);
+  } else if (currentState.currentMode === 'inbox') {
+    // Get more of that delicious inbox
+    handleInbox(req, res, oauthClient, true);
+  } else {
+    throw Error('Gmail: Unsupported state.');
+  }
 };
 
 app.get('/clear', function(req, res) {
@@ -209,6 +309,8 @@ app.get('/sms', function(req, res) {
         handleInbox(req, res, oauthClient);
       } else if (kanye.isNumber(message)) {
         handleReadMessage(req, res, parseInt(message, 10), oauthClient);
+      } else if (message === 'more' || message === 'next' || message === 'm') {
+        handleMore(req, res, oauthClient);
       } else if (message && message.substring(0,7).toLowerCase() === 'compose') {
         // They want to send a message. Parse the string, ensure its valid, then try to send.
         var messageParts = message.split(/\s+/);
