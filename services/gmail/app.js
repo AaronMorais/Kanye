@@ -66,7 +66,10 @@ var handleInbox = function(req, res, oauthClient) {
     maxResults: 5
   }, function(err, response) {
     if (err) {
-      req.status(403).json({ error: 'Failed to retrieve inbox. Sorry bruh!' });
+      console.error('Retrieving messages error: %s');
+      console.error( err );
+
+      res.status(403).json({ error: 'Failed to retrieve inbox. Sorry bruh!' });
     } else {
       var messages          = response.messages;
       var nextPageToken     = response.nextPageToken;
@@ -113,16 +116,8 @@ var handleInbox = function(req, res, oauthClient) {
                   messageHtml = (new Buffer(emailMessage.payload.parts[0].body.data, 'base64').toString('ascii'));
                 }
 
-                article(messageHtml, function(err, result) {
-                  if (err) callback(err);
-
-                  console.log(result);
-
-                  emailMessageBody = result;
-                  currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
-                  // Finally done!
-                  callback(null, currentState);
-                });
+                currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
+                callback(null, currentState);
               });
           };
         })(messageId));
@@ -134,13 +129,14 @@ var handleInbox = function(req, res, oauthClient) {
         // Get the message contents for all messages in the inbox.
         // Keep these stored, so if we read them later we dont do another API request.
         console.log('-> Starting %s parallel jobs to retrieve messages.', getMessageJobs.length);
-        async.parallel(getMessageJobs, function(err, resultState) {
-          console.log('Okay, all done!');
+        async.parallel(getMessageJobs, function(err, resultStates) {
+
+
           if (err) {
             res.status(500).json({ error: 'Failed to retrieve your emails.' });
           } else {
             // This should be filled out by this point. Build the message to send.
-            var outgoingMessage = resultState.buildInboxMessage();
+            var outgoingMessage = currentState.buildInboxMessage();
             res.status(200).json({
               message: outgoingMessage
             });
