@@ -81,7 +81,7 @@ var createMessageJob = function(messageId, oauthClient, phoneNumber) {
             break;
           }
         }
-        // Find the body of the message - it will be "attached" to the email
+        // Find the body of the message - it will be "attached" to theemail
         // It's possible that the email is composed of multiple parts. In that case
         // just get the first part.
         var messageHtml;
@@ -110,9 +110,9 @@ var createMessageJob = function(messageId, oauthClient, phoneNumber) {
 var handleInbox = function(req, res, oauthClient, next) {
   console.log('-> Gmail handleInbox()');
 
-  if (next && activeUsers[ req.query.number ]) {
-    // Show more inbox entries.
-    var currentState          = activeUsers[ req.query.number ];
+  var currentState = activeUsers[ req.query.number ];
+  if (next && currentState) {
+    console.log(' -> Gmail retrieving next inbox');
     currentState.currentMode  = 'inbox';
     // Use the current state and add more results.
     gmail.users.messages.list({
@@ -222,12 +222,20 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 
   // Subtract by 1 since we start at 1.
   var emailMessage = currentState.getEmailAt( messageIndex - 1 );
+  if (messageIndex - 1 > currentState.inboxThreadCount) {
+    // Index is out of bounds
+    var lower = 1, upper = currentState.inboxThreadCount - 1;
+    res.status(400).json({ error: 'Please choose a number from' + lower + ' to ' + upper });
+    return;
+  }
 
-  var outgoingMessage = emailMessage.body.substring(currentState.currentMessageIndex, textLimit);
+  var outgoingMessage = emailMessage.body.substring(currentState.currentMessageIndex, currentState.currentMessageIndex + textLimit);
+  console.log('-> Outgoing message starts from: %s', currentState.currentMessageIndex);
+
   if (emailMessage.body.length > (currentState.currentMessageIndex + textLimit)) {
     outgoingMessage += '\n Reply with `more` to continue reading. (shortcut is `m`)'
   }
-  else if (currentState.currentMessageIndex > emailMessage.body.length) {
+  else if (currentState.currentMessageIndex >= emailMessage.body.length) {
     outgoingMessage = 'End of Email.';
   }
 
