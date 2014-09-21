@@ -16,6 +16,14 @@ module.exports = {
                 encodeURIComponent(number));
     }
   },
+  normalizeNumber: function(number) {
+    // Remove everything except sweet digits
+    if (number && typeof(number) === 'string') {
+      return number.replace(/\D/g, '').trim();
+    } else {
+      return number;
+    }
+  },
   isNumber: function(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
   },

@@ -59,6 +59,11 @@ app.get('/test', function(req, res) {
     Test: true,
   };
 
+  if (config.DEBUG) {
+    console.log('Sending test params...');
+    console.log( testParams);
+  }
+
   request({ url: 'http://localhost:' + KANYE_PORT + '/sms', qs: testParams },
     function(error, response, body) {
       if (error) {
@@ -82,10 +87,12 @@ app.get('/gmail', function(req, res) {
     function(error, response, body) {
       // Set the cookie for later use.
       req.session.number = userNumber;
+      // Body contains the URL to get to.
       res.cookie({ number: userNumber }).redirect(body);
     });
 });
 
+// Called right after they authenticate in /gmail
 app.get('/oauth2callback', function(req, res) {
   var authorizationCode = req.query.code;
   var number = req.session.number;
@@ -122,7 +129,7 @@ app.get('/sms', function(req, res) {
   var service;
 
   if (config.DEBUG) {
-    console.log('Received SMS: %s - Last service: %s', message, lastService);
+    console.log('Received SMS: %s | Last service: %s', message, lastService);
   }
 
   if (SERVICES.getServiceFromMessage(message)) {
@@ -170,9 +177,19 @@ app.get('/sms', function(req, res) {
         return;
       }
 
-      var bodyJSON = JSON.parse( body );
+      var bodyJSON = body ? JSON.parse( body ) : {};
       var outgoingMessage = bodyJSON.message;
-      var outgoingMedia = bodyJSON.media;
+      var outgoingMedia   = bodyJSON.media;
+      var outgoingError   = bodyJSON.error;
+
+      if (outgoingError) {
+        if (isLocalTest) {
+          res.status(200).send(outgoingError);
+        } else {
+          kanye.sendMessage(number, outgoingError);
+        }
+        return;
+      }
 
       // Instead of sending a test message, inline the result directly to webpage.
       if (isLocalTest) {

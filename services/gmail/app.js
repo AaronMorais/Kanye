@@ -4,6 +4,8 @@ var google        = require('googleapis');
 var config        = require('../../config');
 var redis         = require('redis');
 var async         = require('async');
+var GmailState    = require('./gmailstate.js');
+var article       = require('article');
 var gmail         = google.gmail('v1');
 var OAuth2Client  = google.auth.OAuth2;
 var app           = express();
@@ -22,11 +24,14 @@ var REDIRECT_URL  = config.DEBUG ? 'http://localhost:8000/oauth2callback'
                                  : 'http://www.getkanye.com/oauth2callback';
 
 var redisTokenKey = function(userNumber) {
-  return userNumber + '_' + 'tokens';
+  return kanye.normalizeNumber(userNumber) + '_' + 'tokens';
 }
 
+/**
+  This endpint is called first to get an authorization URL.
+  After this you can get the actual tokens you need.
+**/
 app.get('/auth_url', function(req, res) {
-  var userNumber    = req.query.number;
   var oauth2Client  = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
 
   var url = oauth2Client.generateAuthUrl({
@@ -34,20 +39,18 @@ app.get('/auth_url', function(req, res) {
     scope       : scopes
   });
 
-  console.log('Auth url generated: %s', url);
-
   res.status(200).send(url);
 });
 
 app.get('/get_tokens', function(req, res) {
-  var userNumber    = req.query.number;
+  var userNumber    = kanye.normalizeNumber(req.query.number);
   var redisKey      = redisTokenKey( userNumber );
   var oauth2Client  = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
 
   oauth2Client.getToken(req.query.code, function(err, tokens) {
     // Recall: redis only accepts string value. Be sure to parse JSON when reading.
     redisClient.set(redisKey, JSON.stringify( tokens ), function() {
-      console.log('Stored tokens "%o" for "%s"', tokens, userNumber);
+      console.log('-> Stored tokens in key', redisKey);
       res.status(200).end()
     });
   });
@@ -69,58 +72,78 @@ var handleInbox = function(req, res, oauthClient) {
       var nextPageToken     = response.nextPageToken;
       var currentState      = activeUsers[ req.query.number ];
 
+      console.log('-> Retrieving %s message(s).', messages.length);
+
       // Record this in case they want to see more emails
       currentState.setNextPageToken( nextPageToken );
 
       // API requests to get details on each of the messages
       var getMessageJobs = [];
       for (var i = 0; i < messages.length; i++) {
-        var messageId = messages[i];
-        getMessageJobs.push(function(callback) {
-          gmail.users.message.get({ userId: 'me', id: messageId, auth: oauthClient },
-            function(err, response) {
-              if (err) return callback(err);
+        var messageId = messages[i].id;
 
-              var emailMessageTitle;
-              var emailMessageBody;
+        getMessageJobs.push((function(messageId) {
+          console.log('-> Create job for message %s at %s', messageId, i);
+          return function(callback) {
+            gmail.users.messages.get({ userId: 'me', id: messageId, auth: oauthClient },
+              function(err, response) {
+                if (err) return callback(err);
 
-              var emailMessage = response;
-              // Find the subject line and contents of the email
-              for (var j = 0; j < emailMessage.headers; j++) {
-                console.log('> Iterating over header %s', emailMessage.headers[j].name);
-                if (emailMessage.headers[j].name === 'Subject') {
-                  emailMessageTitle = emailMessage.headers[j].value;
-                  break;
+                var emailMessageTitle;
+                var emailMessageBody;
+                var emailMessage = response;
+
+                // Find the subject line and contents of the email
+                for (var j = 0; j < emailMessage.payload.headers.length; j++) {
+                  if (emailMessage.payload.headers[j].name === 'Subject') {
+                    emailMessageTitle = emailMessage.payload.headers[j].value;
+                    if (config.DEBUG) {
+                      console.log('Found subject line: %s', emailMessageTitle);
+                    }
+                    break;
+                  }
                 }
-              }
-              // Find the body of the message - it will be "attached" to the email
-              var attachments = emailMessage.payload.body;
-              for (var j = 0; j < attachments.length; j++) {
-                if (attachments[j].data) {
-                  emailMessageBody = attachments[j].data;
-                  break;
-                }
-              }
+                // Find the body of the message - it will be "attached" to the email
+                // It's possible that the email is composed of multiple parts. In that case
+                // just get the first part.
 
-              currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
-              callback();
-            });
-        });
+                console.log(emailMessage.payload);
+                var messageHtml = (new Buffer(emailMessage.payload.body.data, 'base64').toString('ascii'));
+
+                article(messageHtml, function(err, result) {
+                  console.log(err);
+
+                  if (err) callback(err);
+
+                  console.log(result);
+
+                  emailMessageBody = result;
+                  currentState.addEmail({ subject: emailMessageTitle, body: emailMessageBody });
+                  // Finally done!
+                  callback(null, currentState);
+                });
+              });
+          };
+        })(messageId));
       }
 
       if (messages.length === 0) {
-        req.status(403).json({ error: 'You have no emails in your inbox.' });
+        res.status(403).json({ error: 'You have no emails in your inbox.' });
       } else {
         // Get the message contents for all messages in the inbox.
         // Keep these stored, so if we read them later we dont do another API request.
-        async.parallel(getMessageJobs, function(callback) {
-          // This should be filled out by this point. Build the message to send.
-          var outgoingMessage = currentState.buildInboxMessage();
-
-          req.status(200).json({
-            message: outgoingMessage
-          });
-
+        console.log('-> Starting %s parallel jobs to retrieve messages.', getMessageJobs.length);
+        async.parallel(getMessageJobs, function(err, resultState) {
+          console.log('Okay, all done!');
+          if (err) {
+            res.status(500).json({ error: 'Failed to retrieve your emails.' });
+          } else {
+            // This should be filled out by this point. Build the message to send.
+            var outgoingMessage = resultState.buildInboxMessage();
+            res.status(200).json({
+              message: outgoingMessage
+            });
+          }
         });
       }
     }
@@ -140,26 +163,25 @@ app.get('/clear', function(req, res) {
 });
 
 app.get('/sms', function(req, res) {
-  console.log( req.query );
+  var userNumber  = req.query.number;
+  var textMessage = req.query.message;
+  var redisKey    = redisTokenKey( userNumber );
 
-  var userNumber = req.query.number;
-  var textMessage= req.query.message;
-  var redisKey   = redisTokenKey( userNumber );
-
-  console.log( textMessage );
+  console.log('Gmail Query')
+  console.log('-> redisKey: %s | userNumber: %s | textMessage: %s',
+    redisKey, userNumber, textMessage)
 
   // Check if this user has authenticated.
   redisClient.get(redisKey, function(err, response) {
-    if (err) {
-      res.status(400).json({ error: 'Go to www.getkanye.com to access this feature.' });
+    if (err || response == null) {
+      res.status(200).json({ error: 'Go to www.getkanye.com to access this feature.' });
     } else {
       // We have tokens, let's log them in.
       var oauthClient = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
       var credentials = JSON.parse( response );
-      var lastState   = activeUsers[ userNumber ];
       var message     = textMessage;
 
-      console.log( textMessage );
+      console.log('Found GMail tokens: %o', credentials);
 
       oauthClient.setCredentials(credentials);
 
@@ -188,8 +210,6 @@ app.get('/sms', function(req, res) {
       }
     }
   });
-
-  res.status(200).end();
 });
 
 app.listen(3003);
