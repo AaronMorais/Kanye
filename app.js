@@ -179,7 +179,7 @@ app.get('/sms', function(req, res) {
     console.log('Falling back to Wolfram Alpha service.');
   }
 
-  kanye.serviceRequest(function(error, response, body) {
+  kanye.serviceRequest(service, message, number, function(error, response, body) {
     g_isWaiting[number] = false;
     if (error || response.statusCode != 200) {
       // Send a 'try again later' message.'
@@ -187,7 +187,7 @@ app.get('/sms', function(req, res) {
         var errorMessage = 'Sorry, I\'m really busy right now. Hit me up later.';
         kanye.sendMessage(number, errorMessage);
       } else {
-        kanye.serviceRequest(function(error, response, body) {
+        kanye.serviceRequest(service, message, number, function(error, response, body) {
           sendBodyResult(number, body, res);
         });
       }
