@@ -151,6 +151,24 @@ var handleReadMessage = function(req, res, messageIndex, oauthClient) {
 };
 
 var handleSendMessage = function(req, res, message, oauthClient) {
+
+  var request = gmail.users.messages.send({
+    'userId' : message.to,
+    'message' : {
+      'raw' : btoa(message.body)
+    }
+  }, function(err, response) {
+    var outgoingMessage;
+    if (err) {
+      outgoingMessage = "Mail send failed.";
+    } else {
+      outgoingMessage = "Mail successfully sent.";
+    }
+
+    res.status(200).json({
+      message: outgoingMessage
+    });
+  });
 };
 
 app.get('/clear', function(req, res) {
@@ -191,11 +209,10 @@ app.get('/sms', function(req, res) {
         handleReadMessage(req, res, parseInt(message, 10), oauthClient);
       } else if (message && message.substring(0,7) === 'compose') {
         // They want to send a message. Parse the string, ensure its valid, then try to send.
-        var messageParts = message.split(' ');
+        var messageParts = message.split(/\s+/);
 
         if (messageParts.length >= 3 && messageParts[0] === 'compose' &&
             kanye.isValidEmail(messageParts[1])) {
-          var recipient = messageParts[1];
           var message = {
             to: messageParts[1],
             body: messageParts.slice(2).join(' ')
