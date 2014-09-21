@@ -174,7 +174,10 @@ app.get('/sms', function(req, res) {
   // Check if this user has authenticated.
   redisClient.get(redisKey, function(err, response) {
     if (err || response == null) {
-      res.status(200).json({ error: 'Go to www.getkanye.com to access this feature.' });
+      res.status(200).json({
+        message: 'Go to www.getkanye.com to access this feature.',
+        number: userNumber
+      });
     } else {
       // We have tokens, let's log them in.
       var oauthClient = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
