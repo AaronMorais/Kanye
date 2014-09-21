@@ -11,9 +11,9 @@ var USER_STATE_INCLUDE = false;
 var messageEndpoint = "/sms";
 var clearEndpoint = "/clear";
 
-var listMessageHelp = "Yo hit me up with dem digits of what you want to read, or " +
-                  "send me \"more\" to see more good shit";
-var articleMessageHelp = "Reply me \"more\" for more good sh*t";
+var listMessageHelp = "Send me the article number you want to read or" +
+                  "send me \"more\" to see more articles";
+var articleMessageHelp = "Send me \"more\" to continue reading";
 
 var activeUsers = {};
 
@@ -67,7 +67,7 @@ var handleMessage = function(req, res) {
         return;
       }
 
-      var result = reply + "\n" + listMessageHelp;
+      var result = reply + "\n\n" + listMessageHelp;
       console.log(result, "Sending a text");
       res.status(200).json({message: result});
     });
@@ -92,7 +92,8 @@ var handleMessage = function(req, res) {
         res.status(400).end();
         return;
       }
-      var text = text+ "\n" + articleMessageHelp;
+
+      var text = text+ "\n\n" + articleMessageHelp;
       console.log("Reading more");
       console.log(text);
       res.status(200).json({message: text});
